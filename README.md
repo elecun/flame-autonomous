@@ -15,3 +15,10 @@ $ python -m venv venv
 $ source ./venv/bin/activate
 (venv)$ pip install -r requirements.txt
 ```
+
+# Execute Camera Monitoring Application (for AV Simulator)
+```
+$ make incabin_camera_monitor
+or
+$ python ./app/incabin_camera_monitor.py --config ./bin/camera.cfg
+```
