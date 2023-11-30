@@ -1,0 +1,6 @@
+pandas
+numpy
+PyQt6
+opencv-python
+paho-mqtt
+pynvml
