@@ -12,19 +12,7 @@ from PyQt6.QtGui import QImage, QPixmap, QCloseEvent
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar
 from PyQt6.uic import loadUi
 from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
-# from camera import CameraController
-# from machine import MachineMonitor
 import json
-
-# pre-defined options
-# WORKING_PATH = pathlib.Path(__file__).parent
-# APP_UI = WORKING_PATH / "window.ui"
-# APP_NAME = "avsim-cam"
-# VIDEO_OUT_DIR = WORKING_PATH / "video"
-# VIDEO_FILE_EXT = "avi"
-# CAMERA_RECORD_FPS = 30
-# CAMERA_RECORD_WIDTH = 1920
-# CAMERA_RECORD_HEIGHT = 1080
 
 
 # for message APIs
@@ -35,8 +23,10 @@ mqtt_topic_manager = "flame/avsim/manager"
 Main window
 '''
 class AppWindow(QMainWindow):
-    def __init__(self, config:dict, camera:list, processor=None):
+    def __init__(self, config:dict, camera:list, postprocess:list):
         super().__init__()
+
+        self.postprocess = postprocess
 
         try:
             if "gui" in config:
@@ -46,7 +36,7 @@ class AppWindow(QMainWindow):
                 else:
                     raise Exception(f"Cannot found UI file : {ui_path}")
                 
-                # menu configuration
+                # menu event callback function connection
                 self.actionStartDataRecording.triggered.connect(self.on_select_start_data_recording)
                 self.actionStopDataRecording.triggered.connect(self.on_select_stop_data_recording)
                 self.actionCapture_Image.triggered.connect(self.on_select_capture_image)
@@ -68,16 +58,20 @@ class AppWindow(QMainWindow):
             "flame/avsim/cam/mapi_record_stop" : self.mapi_record_stop,
             "flame/avsim/mapi_request_active" : self.mapi_notify_active #response directly
         }
+
+        # member variables
+        self.is_camera_connected = False
+        self.camera = camera
+
+    # menu event callback : all camera connection
+    def on_select_connect_all(self):
+        if self.is_camera_connected:
+            QMessageBox.critical(self, "Warning", "All camera is already working..")
+            return
         
-        # menu
-        # self.actionStartDataRecording.triggered.connect(self.on_select_start_data_recording)
-        # self.actionStopDataRecording.triggered.connect(self.on_select_stop_data_recording)
-        # self.actionCapture_Image.triggered.connect(self.on_select_capture_image)
-        # self.actionCapture_Image_with_Keypoints.triggered.connect(self.on_select_capture_with_keypoints)
-        # self.actionCaptureAfter10s.triggered.connect(self.on_select_capture_after_10s)
-        # self.actionCaptureAfter20s.triggered.connect(self.on_select_capture_after_20s)
-        # self.actionCaptureAfter30s.triggered.connect(self.on_select_capture_after_30s)
-        # self.actionConnect_All.triggered.connect(self.on_select_connect_all)
+        for cam in self.camera:
+            pass
+        
 
         # for mqtt connection
         # self.mq_client = mqtt.Client(client_id=APP_NAME,transport='tcp',protocol=mqtt.MQTTv311, clean_session=True)
@@ -154,10 +148,7 @@ class AppWindow(QMainWindow):
 
     def on_select_capture_with_keypoints(self):
         self._api_capture_image_keypoints()
-    
-    # connect all camera and show on display continuously
-    def on_select_connect_all(self):
-        self.start_monitor()
+
                 
     # mapi : record start
     def mapi_record_start(self, payload):
