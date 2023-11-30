@@ -7,10 +7,11 @@ from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 from PyQt6.QtGui import QImage
 import cv2
 from datetime import datetime
+from util.logger.video import VideoRecorder
 
 class Controller(QThread):
 
-    def __init__(self, camera_id:int, recorder=None):
+    def __init__(self, camera_id:int, recorder:VideoRecorder=None):
         super().__init__()
 
         self.camera_id = camera_id  # camera ID
@@ -66,7 +67,11 @@ class Controller(QThread):
 
             if frame is not None:
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # warning! it should be converted from BGR to RGB. But each camera IR turns ON, grayscale is able to use. (grayscale is optional)
-
+                
+                # video recording
+                if self.raw_video_recorder != None:
+                    self.raw_video_recorder.write_frame(frame)
+                
                 t_end = datetime.now()
                 framerate = int(1./(t_end - t_start).total_seconds())
                 #cv2.putText(frame_rgb, f"Camera #{self.camera_id}(fps:{framerate}, processing time:{int(results[0].speed['preprocess']+results[0].speed['inference']+results[0].speed['postprocess'])}ms)", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)

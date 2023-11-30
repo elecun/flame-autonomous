@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
             app = QApplication(sys.argv)
             app_window = AppWindow(config=configure, 
-                                   camera=[IncabinCamController(idx, recorder=VideoRecorder(video_out_dir)) for idx, id in enumerate(configure["camera_id"])], 
+                                   camera=[IncabinCamController(id, recorder=VideoRecorder(video_out_dir, f"camera_{id}")) for idx, id in enumerate(configure["camera_id"])], 
                                    postprocess=[YOLOv8_model(str(configure["hpe_model"]).lower()) for idx, id in enumerate(configure["camera_id"])])
             
             if "app_window_title" in configure:
