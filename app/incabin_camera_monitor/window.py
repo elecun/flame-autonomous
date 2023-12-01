@@ -4,7 +4,6 @@ Incabin Cmaera Monitor Application Window class
 '''
 
 import os
-
 import cv2
 import pathlib
 import paho.mqtt.client as mqtt
@@ -14,19 +13,16 @@ from PyQt6.uic import loadUi
 from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 import json
 
-
-# for message APIs
-mqtt_topic_manager = "flame/avsim/manager"
+from vision.camera.uvc import Controller as IncabinCameraController
+from util.logger.video import VideoRecorder
 
 
 '''
 Main window
 '''
 class AppWindow(QMainWindow):
-    def __init__(self, config:dict, camera:list, postprocess:list):
+    def __init__(self, config:dict, camera:list[IncabinCameraController], postprocess:list):
         super().__init__()
-
-        self.postprocess = postprocess
 
         try:
             if "gui" in config:
@@ -46,45 +42,51 @@ class AppWindow(QMainWindow):
                 self.actionCaptureAfter30s.triggered.connect(self.on_select_capture_after_30s)
                 self.actionConnect_All.triggered.connect(self.on_select_connect_all)
 
+                #frame window mapping
+                self.frame_window_map = {}
+                for idx, id in enumerate(config["camera_id"]):
+                    self.frame_window_map[id] = config["camera_window"][idx]
+
         except Exception as e:
             print(f"Exception : {e}")
-
-        self.configure_param = config
-        self.opened_camera = {}
-        self.machine_monitor = None
-        self.is_machine_running = False
-        self.message_api = {
-            "flame/avsim/cam/mapi_record_start" : self.mapi_record_start,
-            "flame/avsim/cam/mapi_record_stop" : self.mapi_record_stop,
-            "flame/avsim/mapi_request_active" : self.mapi_notify_active #response directly
-        }
-
+        
         # member variables
-        self.is_camera_connected = False
-        self.camera = camera
+        self.postprocess = postprocess  # model for post processing
+        #self.controller = Controller()  # binding with camera device and postprocessor 
+        self.configure_param = config   # configure parameters
+        self.is_camera_connected = False    # camera connection flag
+        self.camera = camera            # camera list
 
     # menu event callback : all camera connection
     def on_select_connect_all(self):
         if self.is_camera_connected:
-            QMessageBox.critical(self, "Warning", "All camera is already working..")
+            QMessageBox.warning(self, "Warning", "All camera is already working..")
             return
         
         for cam in self.camera:
-            pass
-        
+            if cam.open():
+                cam.frame_update_signal.connect(self.show_updated_frame)    # connect to frame grab signal callback function
+                cam.begin()
+            else:
+                QMessageBox.critical(self, "Camera connection fail", f"Failed to connect to camera {cam.camera_id}")
 
-        # for mqtt connection
-        # self.mq_client = mqtt.Client(client_id=APP_NAME,transport='tcp',protocol=mqtt.MQTTv311, clean_session=True)
-        # self.mq_client.on_connect = self.on_mqtt_connect
-        # self.mq_client.on_message = self.on_mqtt_message
-        # self.mq_client.on_disconnect = self.on_mqtt_disconnect
-        # self.mq_client.connect_async(broker_ip_address, port=1883, keepalive=60)
-        # self.mq_client.loop_start()
 
-        # # for gpu resource monitoring
-        # self.machine_monitor = MachineMonitor(1000)
-        # self.machine_monitor.gpu_monitor_slot.connect(self.gpu_monitor_update)
-        # self.machine_monitor.start()
+
+    # show updated image frame on GUI window
+    def show_updated_frame(self, image:QImage):
+        pixmap = QPixmap.fromImage(image)
+        id = self.sender().camera_id
+
+        try:
+            window = self.findChild(QLabel, self.frame_window_map[id])
+            window.setPixmap(pixmap.scaled(window.size(), Qt.AspectRatioMode.KeepAspectRatio))
+        except Exception as e:
+            print(e)
+
+
+
+
+
 
     # camera open after show this GUI
     def start_monitor(self):
@@ -183,11 +185,11 @@ class AppWindow(QMainWindow):
 
     # close event callback function by user
     def closeEvent(self, a0: QCloseEvent) -> None:
-        for device in self.opened_camera.values():
-            device.close()
+        # for device in self.opened_camera.values():
+        #     device.close()
 
-        if self.machine_monitor!=None:
-            self.machine_monitor.close()
+        # if self.machine_monitor!=None:
+        #     self.machine_monitor.close()
 
         return super().closeEvent(a0)
     

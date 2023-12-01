@@ -20,15 +20,15 @@ ROOT_PATH = pathlib.Path(__file__).parent.parent
 sys.path.append(ROOT_PATH.as_posix())
 
 from incabin_camera_monitor.window import AppWindow
-from vision.camera.USB_General import Controller as IncabinCamController
+from vision.camera.uvc import Controller as IncabinCameraController
 from vision.HPE.YOLOv8 import Model as YOLOv8_model
-from util.logger.video import VideoRecorder
+
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', nargs='?', required=True, help="Configuration File(*.cfg)", default="default.cfg")
-    parser.add_argument('--broker', nargs='?', required=False, help="Broker IP Address", default="127.0.0.1")
+    parser.add_argument('--verbose', nargs='?', required=False, help="Enable/Disable verbose", default=True)
     args = parser.parse_args()
 
     app = None
@@ -36,21 +36,23 @@ if __name__ == "__main__":
         with open(args.config, "r") as cfile:
             configure = json.load(cfile)
 
-            configure["root_path"] = ROOT_PATH.as_posix()
-            configure["app_path"] = (pathlib.Path(__file__).parent / "incabin_camera_monitor").as_posix()
+            configure["root_path"] = ROOT_PATH
+            configure["app_path"] = (pathlib.Path(__file__).parent / "incabin_camera_monitor")
+            configure["verbose"] = args.verbose
             video_out_dir = (ROOT_PATH / configure["video_out_path"])
 
-            print(f"* Root Directory : {configure['root_path']}")
-            print(f"* Application Directory : {configure['app_path']}")
-            print(f"* Video Out Directory : {video_out_dir}")
+            if args.verbose:
+                print(f"* Root Directory : {configure['root_path']}")
+                print(f"* Application Directory : {configure['app_path']}")
+                print(f"* Video Out Directory : {video_out_dir}")
 
             # check required parameters
-            if not all(key in configure for key in ["hpe_model", "camera_id"]):
+            if not all(key in configure for key in ["hpe_model", "camera_id", "camera_fps", "camera_width", "camera_height", "video_extension"]):
                 raise Exception(f"some parameters does not set in the {args.config}configuration file")
 
             app = QApplication(sys.argv)
-            app_window = AppWindow(config=configure, 
-                                   camera=[IncabinCamController(id, recorder=VideoRecorder(video_out_dir, f"camera_{id}")) for idx, id in enumerate(configure["camera_id"])], 
+            app_window = AppWindow(config=configure,
+                                   camera=[IncabinCameraController(id) for id in configure["camera_id"]], 
                                    postprocess=[YOLOv8_model(str(configure["hpe_model"]).lower()) for idx, id in enumerate(configure["camera_id"])])
             
             if "app_window_title" in configure:
@@ -61,7 +63,7 @@ if __name__ == "__main__":
     except json.JSONDecodeError as e:
         print(f"Configuration File Load Error : {e}")
     except Exception as e:
-        print(f"Exception : {e}")
+        print(f"-Exception : {e}")
         
     
         

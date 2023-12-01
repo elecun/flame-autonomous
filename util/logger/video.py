@@ -15,10 +15,23 @@ class AbstractVideoRecorder(metaclass=ABCMeta):
         pass
 
 class VideoRecorder(QObject):
-    def __init__(self, dirname:pathlib.Path, filename:str):
+    def __init__(self, dirpath:pathlib.Path, filename:str):
         super().__init__()
 
-        self.raw_video_writer = cv2.VideoWriter(str(self.data_out_path/f'cam_{self.camera_id}.{VIDEO_FILE_EXT}'), fourcc, CAMERA_RECORD_FPS, (camera_w, camera_h))
+        # camera_fps = int(self.grabber.get(cv2.CAP_PROP_FPS))
+        # camera_w = int(self.grabber.get(cv2.CAP_PROP_FRAME_WIDTH))
+        # camera_h = int(self.grabber.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # fourcc = cv2.VideoWriter_fourcc(*'MJPG') # low compression but bigger (file extension : avi)
+
+        #self.raw_video_writer = cv2.VideoWriter(str(dirpath/filename)), fourcc, CAMERA_RECORD_FPS, (camera_w, camera_h))
+
+    # set frame rate
+    def set_fps(self, fps:int):
+        pass
+
+    # set frame widht, height
+    def set_frame_size(self, widht:int, height:int):
+        pass
 
     def start(self):
         pass

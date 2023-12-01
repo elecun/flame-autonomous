@@ -9,7 +9,10 @@ import cv2
 from datetime import datetime
 from util.logger.video import VideoRecorder
 
+
 class Controller(QThread):
+
+    frame_update_signal = pyqtSignal(QImage)
 
     def __init__(self, camera_id:int, recorder:VideoRecorder=None):
         super().__init__()
@@ -54,7 +57,6 @@ class Controller(QThread):
     def __str__(self):
         return str(self.camera_id)
     
-
     # image grab with thread
     def run(self):
         while True:
@@ -69,8 +71,8 @@ class Controller(QThread):
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # warning! it should be converted from BGR to RGB. But each camera IR turns ON, grayscale is able to use. (grayscale is optional)
                 
                 # video recording
-                if self.raw_video_recorder != None:
-                    self.raw_video_recorder.write_frame(frame)
+                # if self.raw_video_recorder != None:
+                #     self.raw_video_recorder.write_frame(frame)
                 
                 t_end = datetime.now()
                 framerate = int(1./(t_end - t_start).total_seconds())
@@ -80,7 +82,7 @@ class Controller(QThread):
                 _h, _w, _ch = frame_rgb.shape
                 _bpl = _ch*_w # bytes per line
                 qt_image = QImage(frame_rgb.data, _w, _h, _bpl, QImage.Format.Format_RGB888)
-                self.image_frame_slot.emit(qt_image)
+                self.frame_update_signal.emit(qt_image) # emit frame signal
 
     # write raw video stream data
     def raw_video_record(self, frame):
@@ -90,8 +92,13 @@ class Controller(QThread):
     # ready to start video recording
     def start_recording(self):
         if not self.is_recording:
-            
-            # create video writer
+            #if self.raw_video_recorder!=None:
+                # create video writer
+
+                # camera_fps = int(self.grabber.get(cv2.CAP_PROP_FPS))
+                # camera_w = int(self.grabber.get(cv2.CAP_PROP_FRAME_WIDTH))
+                # camera_h = int(self.grabber.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                # fourcc = cv2.VideoWriter_fourcc(*'MJPG') # low compression but bigger (file extension : avi)
 
             # start working on thread
             self.is_recording = True # working on thread
