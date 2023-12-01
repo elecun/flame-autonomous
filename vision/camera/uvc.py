@@ -8,29 +8,38 @@ from PyQt6.QtGui import QImage
 import cv2
 from datetime import datetime
 from util.logger.video import VideoRecorder
+import platform
 
 
 class Controller(QThread):
 
     frame_update_signal = pyqtSignal(QImage)
 
-    def __init__(self, camera_id:int, recorder:VideoRecorder=None):
+    def __init__(self, camera_id:int):
         super().__init__()
 
         self.camera_id = camera_id  # camera ID
         self.grabber = None         # device instance
         self.is_recording = False   # video recording status
-        self.raw_video_recorder = recorder
+        
         self.raw_video_writer = None    # raw video writer
 
     # camera device open
     def open(self) -> bool:
         try:
-            self.grabber = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2) # video capture instance with opencv
+            os_system = platform.system()
+            if os_system == "Darwin": #MacOS
+                self.grabber = cv2.VideoCapture(self.camera_id)
+            elif os_system == "Linux": # Linux
+                self.grabber = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2) # video capture instance with opencv
+            elif os_system == "Windows":
+                self.grabber = cv2.VideoCapture(self.camera_id)
+            else:
+                raise Exception("Unsupported Camera")
+
             if not self.grabber.isOpened():
                 return False
-            
-            print(f"Camera {self.camera_id} is now connected")
+        
             self.is_recording = False
 
         except Exception as e:
@@ -61,7 +70,6 @@ class Controller(QThread):
     def run(self):
         while True:
             if self.isInterruptionRequested():
-                print(f"camera {self.camera_id} controller worker is interrupted")
                 break
             
             t_start = datetime.now()

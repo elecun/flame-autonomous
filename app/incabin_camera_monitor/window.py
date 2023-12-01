@@ -15,17 +15,20 @@ import json
 
 from vision.camera.uvc import Controller as IncabinCameraController
 from util.logger.video import VideoRecorder
+from util.monitor.system import SystemStatusMonitor
 
 
 '''
 Main window
 '''
 class AppWindow(QMainWindow):
-    def __init__(self, config:dict, camera:list[IncabinCameraController], postprocess:list):
+    def __init__(self, config:dict):
         super().__init__()
 
-        try:
+        try:            
             if "gui" in config:
+                
+                # load gui file
                 ui_path = pathlib.Path(config["app_path"]) / config["gui"]
                 if os.path.isfile(ui_path):
                     loadUi(ui_path, self)
@@ -46,16 +49,22 @@ class AppWindow(QMainWindow):
                 self.frame_window_map = {}
                 for idx, id in enumerate(config["camera_id"]):
                     self.frame_window_map[id] = config["camera_window"][idx]
+                    
+                # apply monitoring
+                self.sys_monitor = SystemStatusMonitor()
+                self.sys_monitor.usage_update_signal.connect(self.update_system_status)
+                self.sys_monitor.start()
 
         except Exception as e:
             print(f"Exception : {e}")
         
         # member variables
-        self.postprocess = postprocess  # model for post processing
+        #self.postprocess = postprocess  # model for post processing
         #self.controller = Controller()  # binding with camera device and postprocessor 
-        self.configure_param = config   # configure parameters
+        self.configure = config   # configure parameters
         self.is_camera_connected = False    # camera connection flag
-        self.camera = camera            # camera list
+        #self.camera = camera            # camera list
+        self.camera_container = {}    # connected camera
 
     # menu event callback : all camera connection
     def on_select_connect_all(self):
@@ -63,13 +72,15 @@ class AppWindow(QMainWindow):
             QMessageBox.warning(self, "Warning", "All camera is already working..")
             return
         
-        for cam in self.camera:
-            if cam.open():
-                cam.frame_update_signal.connect(self.show_updated_frame)    # connect to frame grab signal callback function
-                cam.begin()
+        # create camera instance
+        for id in self.configure["camera_id"]:
+            camera = IncabinCameraController(id)
+            if camera.open():
+                self.camera_container[id] = camera
+                self.camera_container[id].frame_update_signal.connect(self.show_updated_frame)    # connect to frame grab signal callback function
+                self.camera_container[id].begin()
             else:
-                QMessageBox.critical(self, "Camera connection fail", f"Failed to connect to camera {cam.camera_id}")
-
+                QMessageBox.warning(self, "Camera connection fail", f"Failed to connect to camera {camera.camera_id}")
 
 
     # show updated image frame on GUI window
@@ -82,6 +93,28 @@ class AppWindow(QMainWindow):
             window.setPixmap(pixmap.scaled(window.size(), Qt.AspectRatioMode.KeepAspectRatio))
         except Exception as e:
             print(e)
+            
+    # show update system monitoring on GUI window
+    def update_system_status(self, status:dict):
+        cpu_usage_window = self.findChild(QProgressBar, "progress_cpu_usage")
+        mem_usage_window = self.findChild(QProgressBar, "progress_mem_usage")
+        storage_usage_window = self.findChild(QProgressBar, "progress_storage_usage")
+        cpu_usage_window.setValue(int(status["cpu"]))
+        mem_usage_window.setValue(int(status["memory"]))
+        storage_usage_window.setValue(int(status["storage"]))
+        
+            
+    # close event callback function by user
+    def closeEvent(self, a0: QCloseEvent) -> None:
+        for camera in self.camera_container.values():
+            camera.close()
+        
+        self.sys_monitor.close()
+
+        # if self.machine_monitor!=None:
+        #     self.machine_monitor.close()
+
+        return super().closeEvent(a0)
 
 
 
@@ -183,15 +216,7 @@ class AppWindow(QMainWindow):
         gpu_usage_window.setValue(status["gpu_usage"])
         gpu_memory_usage_window.setValue(status["gpu_memory_usage"])
 
-    # close event callback function by user
-    def closeEvent(self, a0: QCloseEvent) -> None:
-        # for device in self.opened_camera.values():
-        #     device.close()
 
-        # if self.machine_monitor!=None:
-        #     self.machine_monitor.close()
-
-        return super().closeEvent(a0)
     
     # notification
     def mapi_notify_active(self):

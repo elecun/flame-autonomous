@@ -51,9 +51,7 @@ if __name__ == "__main__":
                 raise Exception(f"some parameters does not set in the {args.config}configuration file")
 
             app = QApplication(sys.argv)
-            app_window = AppWindow(config=configure,
-                                   camera=[IncabinCameraController(id) for id in configure["camera_id"]], 
-                                   postprocess=[YOLOv8_model(str(configure["hpe_model"]).lower()) for idx, id in enumerate(configure["camera_id"])])
+            app_window = AppWindow(config=configure)
             
             if "app_window_title" in configure:
                 app_window.setWindowTitle(configure["app_window_title"])
