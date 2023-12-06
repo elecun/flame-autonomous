@@ -273,8 +273,15 @@
     </property>
     <addaction name="actionConnect_All"/>
    </widget>
+   <widget class="QMenu" name="menuProcess">
+    <property name="title">
+     <string>Process</string>
+    </property>
+    <addaction name="actionEnable_HPE"/>
+   </widget>
    <addaction name="menuControl"/>
    <addaction name="menuCamera"/>
+   <addaction name="menuProcess"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionStartDataRecording">
@@ -292,22 +299,6 @@
     <string>Capture Image(*.png)</string>
    </property>
   </action>
-  <action name="actionYOLOv8n_pose">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>YOLOv8n-pose</string>
-   </property>
-  </action>
-  <action name="actionYOLOv8s_pose">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>YOLOv8s-pose</string>
-   </property>
-  </action>
   <action name="actionExit">
    <property name="icon">
     <iconset theme="application-exit">
@@ -318,21 +309,6 @@
    </property>
    <property name="shortcut">
     <string>Meta+X</string>
-   </property>
-  </action>
-  <action name="actionYOLOv8m_pose">
-   <property name="text">
-    <string>YOLOv8m-pose</string>
-   </property>
-  </action>
-  <action name="actionYOLOv8l_pose">
-   <property name="text">
-    <string>YOLOv8l-pose</string>
-   </property>
-  </action>
-  <action name="actionYOLOv8x_pose">
-   <property name="text">
-    <string>YOLOv8x-pose</string>
    </property>
   </action>
   <action name="actionConnect_All">
@@ -358,6 +334,14 @@
   <action name="actionCaptureAfter30s">
    <property name="text">
     <string>30s</string>
+   </property>
+  </action>
+  <action name="actionEnable_HPE">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Enable HPE</string>
    </property>
   </action>
  </widget>

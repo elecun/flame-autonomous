@@ -22,14 +22,18 @@ sys.path.append(ROOT_PATH.as_posix())
 from incabin_camera_monitor.window import AppWindow
 from vision.camera.uvc import Controller as IncabinCameraController
 from vision.HPE.YOLOv8 import Model as YOLOv8_model
+from util.logger.console import ConsoleLogger
 
 
 if __name__ == "__main__":
+    
+    console = ConsoleLogger.get_logger()
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', nargs='?', required=True, help="Configuration File(*.cfg)", default="default.cfg")
     parser.add_argument('--verbose', nargs='?', required=False, help="Enable/Disable verbose", default=True)
     args = parser.parse_args()
+    
 
     app = None
     try:
@@ -42,9 +46,9 @@ if __name__ == "__main__":
             video_out_dir = (ROOT_PATH / configure["video_out_path"])
 
             if args.verbose:
-                print(f"* Root Directory : {configure['root_path']}")
-                print(f"* Application Directory : {configure['app_path']}")
-                print(f"* Video Out Directory : {video_out_dir}")
+                console.info(f"Root Directory : {configure['root_path']}")
+                console.info(f"Application Directory : {configure['app_path']}")
+                console.info(f"Video Out Directory : {video_out_dir}")
 
             # check required parameters
             if not all(key in configure for key in ["hpe_model", "camera_id", "camera_fps", "camera_width", "camera_height", "video_extension"]):
@@ -59,9 +63,9 @@ if __name__ == "__main__":
             sys.exit(app.exec())
 
     except json.JSONDecodeError as e:
-        print(f"Configuration File Load Error : {e}")
+        console.critical(f"Configuration File Load Error : {e}")
     except Exception as e:
-        print(f"-Exception : {e}")
+        console.critical(f"{e}")
         
     
         

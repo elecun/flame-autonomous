@@ -9,22 +9,20 @@ import cv2
 from datetime import datetime
 from util.logger.video import VideoRecorder
 import platform
+from util.logger.console import ConsoleLogger
+from vision.camera.interface import ICamera
 
 
-class Controller(QThread):
-
-    frame_update_signal = pyqtSignal(QImage)
-
-    def __init__(self, camera_id:int):
-        super().__init__()
-
+# camera device class
+class UVC(ICamera):
+    def __init__(self, camera_id: int) -> None:
+        super().__init__(camera_id)
+        
         self.camera_id = camera_id  # camera ID
         self.grabber = None         # device instance
-        self.is_recording = False   # video recording status
-        
-        self.raw_video_writer = None    # raw video writer
-
-    # camera device open
+        self.console = ConsoleLogger.get_logger()
+    
+    # open camera device    
     def open(self) -> bool:
         try:
             os_system = platform.system()
@@ -34,6 +32,61 @@ class Controller(QThread):
                 self.grabber = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2) # video capture instance with opencv
             elif os_system == "Windows":
                 self.grabber = cv2.VideoCapture(self.camera_id)
+            else:
+                raise Exception("Unsupported Camera")
+
+            if not self.grabber.isOpened():
+                return False
+        
+            self.is_recording = False
+
+        except Exception as e:
+            self.console.critical(f"{e}")
+            return False
+        return True
+    
+    # close camera device
+    def close(self) -> None:
+        if self.grabber:
+            self.grabber.release()
+        self.console.info(f"camera {self.camera_id} controller is closed")
+    
+    # captrue image
+    def grab(self):
+        ret, frame = self.grabber.read() # grab
+
+        if ret:
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            return frame_rgb
+        return None
+
+# camera controller class
+class Controller(QThread):
+
+    frame_update_signal = pyqtSignal(QImage)
+
+    def __init__(self, camera_id:int):
+        super().__init__()
+        
+        self.console = ConsoleLogger.get_logger()   # console logger
+        self.uvc_camera = UVC(camera_id)    # UVC camera device
+
+        self.is_recording = False   # video recording status
+        self.raw_video_writer = None    # raw video writer
+        
+    def get_camera_id(self) -> int:
+        return self.uvc_camera.camera_id
+
+    # camera device open
+    def open(self) -> bool:
+        try:
+            os_system = platform.system()
+            if os_system == "Darwin": #MacOS
+                self.grabber = cv2.VideoCapture(self.uvc_camera.camera_id)
+            elif os_system == "Linux": # Linux
+                self.grabber = cv2.VideoCapture(self.uvc_camera.camera_id, cv2.CAP_V4L2) # video capture instance with opencv
+            elif os_system == "Windows":
+                self.grabber = cv2.VideoCapture(self.uvc_camera.camera_id)
             else:
                 raise Exception("Unsupported Camera")
 
@@ -54,8 +107,8 @@ class Controller(QThread):
         self.wait(1000)
 
         # release grabber
-        self.grabber.release()
-        print(f"camera {self.camera_id} controller is terminated successfully")
+        self.uvc_camera.close()
+        self.console.info(f"camera {self.uvc_camera.camera_id} controller is closed")
 
     # start thread
     def begin(self):
@@ -64,7 +117,10 @@ class Controller(QThread):
     
     # return camera id
     def __str__(self):
-        return str(self.camera_id)
+        return str(self.uvc_camera.camera_id)
+    
+    def grab(self):
+        pass
     
     # image grab with thread
     def run(self):
@@ -111,5 +167,5 @@ class Controller(QThread):
             # start working on thread
             self.is_recording = True # working on thread
         else:
-            print("Exception : Already raw video is recording...")
+            self.console.warning(f"Already raw video is recording...")
     

@@ -14,8 +14,10 @@ class SystemStatusMonitor(QThread):
     
     usage_update_signal = pyqtSignal(dict)
     
-    def __init__(self):
+    def __init__(self, interval_ms:int=1000):
         super().__init__()
+        
+        self.interval = interval_ms
         self.usage = {}
     
     def run(self):
@@ -32,7 +34,7 @@ class SystemStatusMonitor(QThread):
             # emit signal
             self.usage_update_signal.emit(self.usage)
             
-            time.sleep(1) # delay 1sec
+            QThread.msleep(self.interval)
 
     # close thread
     def close(self) -> None:

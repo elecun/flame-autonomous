@@ -16,7 +16,8 @@ import json
 from vision.camera.uvc import Controller as IncabinCameraController
 from util.logger.video import VideoRecorder
 from util.monitor.system import SystemStatusMonitor
-
+from util.monitor.gpu import GPUStatusMonitor
+from util.logger.console import ConsoleLogger
 
 '''
 Main window
@@ -24,6 +25,8 @@ Main window
 class AppWindow(QMainWindow):
     def __init__(self, config:dict):
         super().__init__()
+        
+        self.console = ConsoleLogger.get_logger()
 
         try:            
             if "gui" in config:
@@ -44,6 +47,7 @@ class AppWindow(QMainWindow):
                 self.actionCaptureAfter20s.triggered.connect(self.on_select_capture_after_20s)
                 self.actionCaptureAfter30s.triggered.connect(self.on_select_capture_after_30s)
                 self.actionConnect_All.triggered.connect(self.on_select_connect_all)
+                self.actionEnable_HPE.triggered.connect(self.on_select_enable_hpe)
 
                 #frame window mapping
                 self.frame_window_map = {}
@@ -51,12 +55,21 @@ class AppWindow(QMainWindow):
                     self.frame_window_map[id] = config["camera_window"][idx]
                     
                 # apply monitoring
-                self.sys_monitor = SystemStatusMonitor()
+                self.sys_monitor = SystemStatusMonitor(interval_ms=1000)
                 self.sys_monitor.usage_update_signal.connect(self.update_system_status)
                 self.sys_monitor.start()
+                
+                # apply gpu monitoring
+                try:
+                    self.gpu_monitor = GPUStatusMonitor(interval_ms=1000)
+                    self.gpu_monitor.usage_update_signal.connect(self.update_gpu_status)
+                    self.gpu_monitor.start()
+                except Exception as e:
+                    self.console.critical("GPU may not be available")
+                    pass
 
         except Exception as e:
-            print(f"Exception : {e}")
+            self.console.critical(f"Exception : {e}")
         
         # member variables
         #self.postprocess = postprocess  # model for post processing
@@ -80,19 +93,22 @@ class AppWindow(QMainWindow):
                 self.camera_container[id].frame_update_signal.connect(self.show_updated_frame)    # connect to frame grab signal callback function
                 self.camera_container[id].begin()
             else:
-                QMessageBox.warning(self, "Camera connection fail", f"Failed to connect to camera {camera.camera_id}")
+                QMessageBox.warning(self, "Camera connection fail", f"Failed to connect to camera {camera.uvc_camera.camera_id}")
 
+    # enable/disable hpe
+    def on_select_enable_hpe(self):
+        self.console.info(f"check : {self.sender().isChecked()}")
 
     # show updated image frame on GUI window
     def show_updated_frame(self, image:QImage):
         pixmap = QPixmap.fromImage(image)
-        id = self.sender().camera_id
+        id = self.sender().get_camera_id()
 
         try:
             window = self.findChild(QLabel, self.frame_window_map[id])
             window.setPixmap(pixmap.scaled(window.size(), Qt.AspectRatioMode.KeepAspectRatio))
         except Exception as e:
-            print(e)
+            self.console.critical(f"Exception : {e}")
             
     # show update system monitoring on GUI window
     def update_system_status(self, status:dict):
@@ -103,17 +119,29 @@ class AppWindow(QMainWindow):
         mem_usage_window.setValue(int(status["memory"]))
         storage_usage_window.setValue(int(status["storage"]))
         
+    # show update gpu monitoring on GUI window
+    def update_gpu_status(self, status:dict):
+        if "gpu_count" in status:
+            if status["gpu_count"]>0:
+                gpu_usage_window = self.findChild(QProgressBar, "progress_gpu_usage")
+                gpu_mem_usage_window = self.findChild(QProgressBar, "progress_gpu_mem_usage")
+                gpu_usage_window.setValue(int(status["gpu_0"]))
+                gpu_mem_usage_window.setValue(int(status["memory_0"]))
+        
             
     # close event callback function by user
     def closeEvent(self, a0: QCloseEvent) -> None:
         for camera in self.camera_container.values():
             camera.close()
         
-        self.sys_monitor.close()
-
-        # if self.machine_monitor!=None:
-        #     self.machine_monitor.close()
-
+        try:
+            self.sys_monitor.close()
+            self.gpu_monitor.close()
+        except AttributeError as e:
+            self.console.critical(f"Error : {e}")
+            
+        self.console.info("Terminated Successfully")
+        
         return super().closeEvent(a0)
 
 
@@ -207,7 +235,7 @@ class AppWindow(QMainWindow):
             window = self.findChild(QLabel, self.configure_param["camera_windows_map"][id])
             window.setPixmap(pixmap.scaled(window.size(), Qt.AspectRatioMode.KeepAspectRatio))
         except Exception as e:
-            print(e)
+            self.console.warning(f"{e}")
     
     # gpu monitoring update
     def gpu_monitor_update(self, status:dict):
