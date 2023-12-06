@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMes
 from PyQt6.uic import loadUi
 from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 import json
+import numpy as np
 
 from vision.camera.uvc import Controller as IncabinCameraController
 from util.logger.video import VideoRecorder
@@ -72,11 +73,8 @@ class AppWindow(QMainWindow):
             self.console.critical(f"Exception : {e}")
         
         # member variables
-        #self.postprocess = postprocess  # model for post processing
-        #self.controller = Controller()  # binding with camera device and postprocessor 
         self.configure = config   # configure parameters
         self.is_camera_connected = False    # camera connection flag
-        #self.camera = camera            # camera list
         self.camera_container = {}    # connected camera
 
     # menu event callback : all camera connection
@@ -100,10 +98,18 @@ class AppWindow(QMainWindow):
         self.console.info(f"check : {self.sender().isChecked()}")
 
     # show updated image frame on GUI window
-    def show_updated_frame(self, image:QImage):
-        pixmap = QPixmap.fromImage(image)
+    def show_updated_frame(self, image:np.ndarray, fps:float):
+        
+        #converting ndarray to qt image
+        _h, _w, _ch = image.shape
+        _bpl = _ch*_w # bytes per line
+        qt_image = QImage(image.data, _w, _h, _bpl, QImage.Format.Format_RGB888)
+
+        # converting qt image to QPixmap
+        pixmap = QPixmap.fromImage(qt_image)
         id = self.sender().get_camera_id()
 
+        # draw on window
         try:
             window = self.findChild(QLabel, self.frame_window_map[id])
             window.setPixmap(pixmap.scaled(window.size(), Qt.AspectRatioMode.KeepAspectRatio))

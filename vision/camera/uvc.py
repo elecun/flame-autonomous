@@ -11,6 +11,7 @@ from util.logger.video import VideoRecorder
 import platform
 from util.logger.console import ConsoleLogger
 from vision.camera.interface import ICamera
+import numpy as np
 
 
 # camera device class
@@ -49,7 +50,6 @@ class UVC(ICamera):
     def close(self) -> None:
         if self.grabber:
             self.grabber.release()
-        self.console.info(f"camera {self.camera_id} controller is closed")
     
     # captrue image
     def grab(self):
@@ -63,7 +63,7 @@ class UVC(ICamera):
 # camera controller class
 class Controller(QThread):
 
-    frame_update_signal = pyqtSignal(QImage)
+    frame_update_signal = pyqtSignal(np.ndarray, float)
 
     def __init__(self, camera_id:int):
         super().__init__()
@@ -133,20 +133,20 @@ class Controller(QThread):
 
             if frame is not None:
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # warning! it should be converted from BGR to RGB. But each camera IR turns ON, grayscale is able to use. (grayscale is optional)
-                
                 # video recording
                 # if self.raw_video_recorder != None:
                 #     self.raw_video_recorder.write_frame(frame)
                 
                 t_end = datetime.now()
-                framerate = int(1./(t_end - t_start).total_seconds())
+                framerate = float(1./(t_end - t_start).total_seconds())
                 #cv2.putText(frame_rgb, f"Camera #{self.camera_id}(fps:{framerate}, processing time:{int(results[0].speed['preprocess']+results[0].speed['inference']+results[0].speed['postprocess'])}ms)", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
                 #cv2.putText(frame_rgb, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
 
                 _h, _w, _ch = frame_rgb.shape
                 _bpl = _ch*_w # bytes per line
                 qt_image = QImage(frame_rgb.data, _w, _h, _bpl, QImage.Format.Format_RGB888)
-                self.frame_update_signal.emit(qt_image) # emit frame signal
+                #self.frame_update_signal.emit(qt_image, framerate) # emit frame signal
+                self.frame_update_signal.emit(frame_rgb, framerate)
 
     # write raw video stream data
     def raw_video_record(self, frame):
