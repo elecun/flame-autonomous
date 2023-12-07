@@ -8,41 +8,57 @@ from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtGui import QImage
 import pathlib
 from abc import *
+from util.logger.console import ConsoleLogger
+from datetime import datetime
+import numpy as np
 
-class AbstractVideoRecorder(metaclass=ABCMeta):
-    @abstractmethod
-    def write(self):
-        pass
 
 class VideoRecorder(QObject):
-    def __init__(self, dirpath:pathlib.Path, filename:str):
+    def __init__(self, dirpath:pathlib.Path, filename:str, resolution:(int,int), fps:float, ext:str="avi"):
         super().__init__()
-
-        # camera_fps = int(self.grabber.get(cv2.CAP_PROP_FPS))
-        # camera_w = int(self.grabber.get(cv2.CAP_PROP_FRAME_WIDTH))
-        # camera_h = int(self.grabber.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        # fourcc = cv2.VideoWriter_fourcc(*'MJPG') # low compression but bigger (file extension : avi)
-
-        #self.raw_video_writer = cv2.VideoWriter(str(dirpath/filename)), fourcc, CAMERA_RECORD_FPS, (camera_w, camera_h))
-
-    # set frame rate
-    def set_fps(self, fps:int):
-        pass
-
-    # set frame widht, height
-    def set_frame_size(self, widht:int, height:int):
-        pass
+        
+        self.__console = ConsoleLogger.get_logger()
+        
+        self.__writer = None
+        self.__is_recording = False
+        self.__dirpath = dirpath
+        self.__filename = filename
+        self.__resolution = resolution
+        self.__fps = fps
+        self.__ext = ext
+        self.__fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        self.__video_outfile_absolute = None
 
     def start(self):
-        pass
+        if self.__is_recording:
+            self.__console.warning("Video recording is now in progress...")
+            return
+        
+        # create directory named from date
+        record_start_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        video_out_path = self.__dirpath / record_start_datetime
+        video_out_path.mkdir(parents=True, exist_ok=True)
+        
+        self.__video_outfile_absolute = (video_out_path / f"{self.__filename}.{self.__ext}")
+        self.__console.info(f"Recording in {self.__video_outfile_absolute.as_posix()}")
+        
+        # create video writer
+        self.__writer = cv2.VideoWriter(self.__video_outfile_absolute.as_posix(), 
+                                        self.__fourcc,
+                                        self.__fps,
+                                        self.__resolution)
+        
+        self.__is_recording = True
     
     def pause(self):
-        pass
+        self.__console.warning("Not support yet.")
     
     def stop(self):
-        pass
+        if self.__writer:
+            self.__writer.release()
+        self.__is_recording = False
     
     # write a frame
-    def write_frame(self, frame):
-        if self.raw_video_writer != None:
-            self.raw_video_writer.write(frame)
+    def write_frame(self, image:np.ndarray, fps:float):
+        if self.__is_recording:
+            self.__writer.write(image)

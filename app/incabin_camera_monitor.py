@@ -20,8 +20,6 @@ ROOT_PATH = pathlib.Path(__file__).parent.parent
 sys.path.append(ROOT_PATH.as_posix())
 
 from incabin_camera_monitor.window import AppWindow
-from vision.camera.uvc import Controller as IncabinCameraController
-from vision.HPE.YOLOv8 import Model as YOLOv8_model
 from util.logger.console import ConsoleLogger
 
 

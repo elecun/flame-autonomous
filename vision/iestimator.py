@@ -4,13 +4,17 @@ Vision Estimator Abstract Class
 '''
 
 from abc import ABC, abstractmethod
+import numpy as np
 
 class IVisionEstimator(ABC):
     def __init__(self, name:str) -> None:
         super().__init__()
-        
-        self.name = name
+        self.__name = name
     
     @abstractmethod
-    def predict(self):
+    def predict(self, image:np.ndarray, fps:float):
         pass
+    
+    # estimator name
+    def get_name(self):
+        return self.__name

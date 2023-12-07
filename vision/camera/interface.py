@@ -10,7 +10,7 @@ class ICamera(ABC):
     def __init__(self, camera_id:int) -> None:
         super().__init__()
         
-        self.camera_id = camera_id
+        self.__camera_id = camera_id # private
         
     @abstractmethod
     def open(self) -> bool:
@@ -23,3 +23,6 @@ class ICamera(ABC):
     @abstractmethod
     def grab(self):
         pass
+    
+    def get_camera_id(self) -> int:
+        return self.__camera_id

@@ -19,7 +19,7 @@ class ConsoleLogger:
             cls._logger.setLevel(logging.DEBUG)
             
             formatter = colorlog.ColoredFormatter(
-                '%(log_color)s%(levelname)-8s%(reset)s %(blue)s%(message)s',
+                '[%(asctime)s] %(log_color)s%(levelname)-8s%(reset)s %(blue)s%(message)s',
                 log_colors={
                     'DEBUG':    'cyan',
                     'INFO':     'green',

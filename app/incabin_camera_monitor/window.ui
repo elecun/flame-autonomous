@@ -243,7 +243,7 @@
      <x>0</x>
      <y>0</y>
      <width>1468</width>
-     <height>24</height>
+     <height>43</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuControl">
@@ -258,9 +258,6 @@
      <addaction name="actionCaptureAfter20s"/>
      <addaction name="actionCaptureAfter30s"/>
     </widget>
-    <addaction name="actionStartDataRecording"/>
-    <addaction name="actionStopDataRecording"/>
-    <addaction name="separator"/>
     <addaction name="actionCapture_Image"/>
     <addaction name="actionCapture_Image_with_Keypoints"/>
     <addaction name="menuCapture_Image_after_time_delay_png"/>
@@ -272,6 +269,9 @@
      <string>Camera</string>
     </property>
     <addaction name="actionConnect_All"/>
+    <addaction name="separator"/>
+    <addaction name="actionStartStopDataRecording"/>
+    <addaction name="actionCapture_to_Image_png"/>
    </widget>
    <widget class="QMenu" name="menuProcess">
     <property name="title">
@@ -279,21 +279,18 @@
     </property>
     <addaction name="actionEnable_HPE"/>
    </widget>
+   <widget class="QMenu" name="menuVideo">
+    <property name="title">
+     <string>Video</string>
+    </property>
+    <addaction name="actionLoad_file_from_record_directory"/>
+   </widget>
    <addaction name="menuControl"/>
    <addaction name="menuCamera"/>
    <addaction name="menuProcess"/>
+   <addaction name="menuVideo"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionStartDataRecording">
-   <property name="text">
-    <string>Start Data Recording</string>
-   </property>
-  </action>
-  <action name="actionStopDataRecording">
-   <property name="text">
-    <string>Stop Data Recording</string>
-   </property>
-  </action>
   <action name="actionCapture_Image">
    <property name="text">
     <string>Capture Image(*.png)</string>
@@ -342,6 +339,30 @@
    </property>
    <property name="text">
     <string>Enable HPE</string>
+   </property>
+  </action>
+  <action name="actionStartStopDataRecording">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Start/Stop Data Recording</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+R</string>
+   </property>
+  </action>
+  <action name="actionCapture_to_Image_png">
+   <property name="text">
+    <string>Capture to Image(*.png)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="actionLoad_file_from_record_directory">
+   <property name="text">
+    <string>Load file from record directory</string>
    </property>
   </action>
  </widget>

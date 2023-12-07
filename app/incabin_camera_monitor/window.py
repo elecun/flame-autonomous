@@ -3,12 +3,12 @@ Incabin Cmaera Monitor Application Window class
 @Author Byunghun Hwang<bh.hwang@iae.re.kr>
 '''
 
-import os
+import os, sys
 import cv2
 import pathlib
 import paho.mqtt.client as mqtt
 from PyQt6.QtGui import QImage, QPixmap, QCloseEvent
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog
 from PyQt6.uic import loadUi
 from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 import json
@@ -19,6 +19,7 @@ from util.logger.video import VideoRecorder
 from util.monitor.system import SystemStatusMonitor
 from util.monitor.gpu import GPUStatusMonitor
 from util.logger.console import ConsoleLogger
+from vision.HPE.YOLOv8 import PoseModel
 
 '''
 Main window
@@ -27,7 +28,7 @@ class AppWindow(QMainWindow):
     def __init__(self, config:dict):
         super().__init__()
         
-        self.console = ConsoleLogger.get_logger()
+        self.__console = ConsoleLogger.get_logger()
 
         try:            
             if "gui" in config:
@@ -40,8 +41,7 @@ class AppWindow(QMainWindow):
                     raise Exception(f"Cannot found UI file : {ui_path}")
                 
                 # menu event callback function connection
-                self.actionStartDataRecording.triggered.connect(self.on_select_start_data_recording)
-                self.actionStopDataRecording.triggered.connect(self.on_select_stop_data_recording)
+                self.actionStartStopDataRecording.triggered.connect(self.on_select_start_stop_data_recording)
                 self.actionCapture_Image.triggered.connect(self.on_select_capture_image)
                 self.actionCapture_Image_with_Keypoints.triggered.connect(self.on_select_capture_with_keypoints)
                 self.actionCaptureAfter10s.triggered.connect(self.on_select_capture_after_10s)
@@ -49,61 +49,101 @@ class AppWindow(QMainWindow):
                 self.actionCaptureAfter30s.triggered.connect(self.on_select_capture_after_30s)
                 self.actionConnect_All.triggered.connect(self.on_select_connect_all)
                 self.actionEnable_HPE.triggered.connect(self.on_select_enable_hpe)
+                self.actionLoad_file_from_record_directory.triggered.connect(self.on_select_load_video_directory)
 
                 #frame window mapping
-                self.frame_window_map = {}
+                self.__frame_window_map = {}
                 for idx, id in enumerate(config["camera_id"]):
-                    self.frame_window_map[id] = config["camera_window"][idx]
+                    self.__frame_window_map[id] = config["camera_window"][idx]
                     
                 # apply monitoring
-                self.sys_monitor = SystemStatusMonitor(interval_ms=1000)
-                self.sys_monitor.usage_update_signal.connect(self.update_system_status)
-                self.sys_monitor.start()
+                self.__sys_monitor = SystemStatusMonitor(interval_ms=1000)
+                self.__sys_monitor.usage_update_signal.connect(self.update_system_status)
+                self.__sys_monitor.start()
                 
                 # apply gpu monitoring
                 try:
-                    self.gpu_monitor = GPUStatusMonitor(interval_ms=1000)
-                    self.gpu_monitor.usage_update_signal.connect(self.update_gpu_status)
-                    self.gpu_monitor.start()
+                    self.__gpu_monitor = GPUStatusMonitor(interval_ms=1000)
+                    self.__gpu_monitor.usage_update_signal.connect(self.update_gpu_status)
+                    self.__gpu_monitor.start()
                 except Exception as e:
-                    self.console.critical("GPU may not be available")
+                    self.__console.critical("GPU may not be available")
                     pass
+            else:
+                raise Exception("GUI definition must be contained in the configuration file.")
 
         except Exception as e:
-            self.console.critical(f"Exception : {e}")
+            self.__console.critical(f"{e}")
         
         # member variables
-        self.configure = config   # configure parameters
-        self.is_camera_connected = False    # camera connection flag
-        self.camera_container = {}    # connected camera
+        self.__configure = config   # configure parameters
+        self.__camera_container = {}    # connected camera
+        self.__recorder_container = {}    # video recorders
+        self.__hpe_container = {}   # human pose estimation container
 
     # menu event callback : all camera connection
     def on_select_connect_all(self):
-        if self.is_camera_connected:
+        if len(self.__camera_container)>0:
             QMessageBox.warning(self, "Warning", "All camera is already working..")
             return
         
         # create camera instance
-        for id in self.configure["camera_id"]:
+        for id in self.__configure["camera_id"]:
             camera = IncabinCameraController(id)
             if camera.open():
-                self.camera_container[id] = camera
-                self.camera_container[id].frame_update_signal.connect(self.show_updated_frame)    # connect to frame grab signal callback function
-                self.camera_container[id].begin()
+                self.__camera_container[id] = camera
+                self.__camera_container[id].frame_update_signal.connect(self.show_updated_frame)    # connect to frame grab signal callback function
+                
+                resol = self.__camera_container[id].get_pixel_resolution()
+                # create video recorder
+                self.__recorder_container[id] = VideoRecorder(dirpath=(self.__configure["app_path"] / self.__configure["video_out_path"]), 
+                                                              filename=f"camera_{id}",
+                                                              ext=self.__configure["video_extension"],
+                                                              resolution=(int(self.__configure["camera_width"]), int(self.__configure["camera_height"])),
+                                                              fps=float(self.__configure["camera_fps"]))
+                self.__camera_container[id].frame_update_signal.connect(self.__recorder_container[id].write_frame)
+                
+                # create human pose estimator
+                self.__hpe_container[id] = PoseModel(modelname=self.__configure["hpe_model"], id=id)
+                self.__camera_container[id].frame_update_signal.connect(self.__hpe_container[id].predict)
+                # self.__hpe_container[id].estimated_result_image.connect(self.show_estimated_frame)
+                
+                # start grab thread
+                self.__camera_container[id].begin()
             else:
-                QMessageBox.warning(self, "Camera connection fail", f"Failed to connect to camera {camera.uvc_camera.camera_id}")
+                QMessageBox.warning(self, "Camera connection fail", f"Failed to connect to camera {camera.uvc_camera.get_camera_id()}")
 
     # enable/disable hpe
     def on_select_enable_hpe(self):
-        self.console.info(f"check : {self.sender().isChecked()}")
+        if self.sender().isChecked(): # enable hpe
+            for model in self.__hpe_container.values():
+                model.start()
+        else:   # disable hpe
+            for model in self.__hpe_container.values():
+                model.stop()
+        
+    # start/stop video recording
+    def on_select_start_stop_data_recording(self):
+        if self.sender().isChecked(): #start recording
+            for recorder in self.__recorder_container.values():
+                recorder.start()
+        else:   # stop recording
+            for recorder in self.__recorder_container.values():
+                recorder.stop()
+    
+    # load video directory
+    def on_select_load_video_directory(self):
+        pass
 
     # show updated image frame on GUI window
     def show_updated_frame(self, image:np.ndarray, fps:float):
+        # converting color format
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
         #converting ndarray to qt image
-        _h, _w, _ch = image.shape
+        _h, _w, _ch = rgb_image.shape
         _bpl = _ch*_w # bytes per line
-        qt_image = QImage(image.data, _w, _h, _bpl, QImage.Format.Format_RGB888)
+        qt_image = QImage(rgb_image.data, _w, _h, _bpl, QImage.Format.Format_RGB888)
 
         # converting qt image to QPixmap
         pixmap = QPixmap.fromImage(qt_image)
@@ -111,10 +151,32 @@ class AppWindow(QMainWindow):
 
         # draw on window
         try:
-            window = self.findChild(QLabel, self.frame_window_map[id])
+            window = self.findChild(QLabel, self.__frame_window_map[id])
             window.setPixmap(pixmap.scaled(window.size(), Qt.AspectRatioMode.KeepAspectRatio))
         except Exception as e:
-            self.console.critical(f"Exception : {e}")
+            self.__console.critical(f"{e}")
+            
+    # show estimated result
+    def show_estimated_frame(self, image:np.ndarray):
+        # converting color format
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        
+        #converting ndarray to qt image
+        _h, _w, _ch = rgb_image.shape
+        _bpl = _ch*_w # bytes per line
+        qt_image = QImage(rgb_image.data, _w, _h, _bpl, QImage.Format.Format_RGB888)
+
+        # converting qt image to QPixmap
+        pixmap = QPixmap.fromImage(qt_image)
+        id = self.sender().get_id()
+
+        # draw on window
+        try:
+            window = self.findChild(QLabel, self.__frame_window_map[id])
+            window.setPixmap(pixmap.scaled(window.size(), Qt.AspectRatioMode.KeepAspectRatio))
+        except Exception as e:
+            self.__console.critical(f"{e}")
+        
             
     # show update system monitoring on GUI window
     def update_system_status(self, status:dict):
@@ -137,16 +199,23 @@ class AppWindow(QMainWindow):
             
     # close event callback function by user
     def closeEvent(self, a0: QCloseEvent) -> None:
-        for camera in self.camera_container.values():
+        
+        # if recording.. stop working
+        for recorder in self.__recorder_container.values():
+            recorder.stop()
+            
+        # close camera
+        for camera in self.__camera_container.values():
             camera.close()
         
+        # close monitoring thread
         try:
-            self.sys_monitor.close()
-            self.gpu_monitor.close()
+            self.__sys_monitor.close()
+            self.__gpu_monitor.close()
         except AttributeError as e:
-            self.console.critical(f"Error : {e}")
+            self.__console.critical(f"{e}")
             
-        self.console.info("Terminated Successfully")
+        self.__console.info("Terminated Successfully")
         
         return super().closeEvent(a0)
 
@@ -155,23 +224,7 @@ class AppWindow(QMainWindow):
 
 
 
-    # camera open after show this GUI
-    def start_monitor(self):
-        if self.is_machine_running:
-            QMessageBox.critical(self, "Already Running", "This Machine is already working...")
-            return
-        
-        # for camera monitoring
-        for id in self.configure_param["camera_ids"]:
-            camera = CameraController(id)
-            if camera.open():
-                self.opened_camera[id] = camera
-                self.opened_camera[id].image_frame_slot.connect(self.update_frame)
-            else:
-                QMessageBox.critical(self, "No Camera", "No Camera device connection")
 
-        for camera in self.opened_camera.values():
-            camera.begin()
     
     # internal api for starting record
     def _api_record_start(self):
@@ -197,13 +250,10 @@ class AppWindow(QMainWindow):
         for camera in self.opened_camera.values():
             camera.start_capturing(delay=0)
     
-    # on_select event for starting record
-    def on_select_start_data_recording(self):
-        self._api_record_start()
+
     
-    # on_select event for stopping record
-    def on_select_stop_data_recording(self):
-        self._api_record_stop()
+
+
         
     # on_select event for capturing to image
     def on_select_capture_image(self):
@@ -241,7 +291,7 @@ class AppWindow(QMainWindow):
             window = self.findChild(QLabel, self.configure_param["camera_windows_map"][id])
             window.setPixmap(pixmap.scaled(window.size(), Qt.AspectRatioMode.KeepAspectRatio))
         except Exception as e:
-            self.console.warning(f"{e}")
+            self.__console.warning(f"{e}")
     
     # gpu monitoring update
     def gpu_monitor_update(self, status:dict):
