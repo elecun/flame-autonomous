@@ -16,6 +16,7 @@ from vision.iestimator import IVisionEstimator
 class PoseModel(QObject):
     
     estimated_result_image = pyqtSignal(np.ndarray)
+    estimated_result_kpt = pyqtSignal(list)
     
     def __init__(self, modelname:str, id:int) -> None:
         super().__init__()
@@ -58,11 +59,14 @@ class PoseModel(QObject):
             
             # draw keypoints on image
             if len(results[0].boxes)>0:
+                log_kps = []
                 for kps in results[0].keypoints.xy.tolist(): #for multi-person
                     for kp in kps:
                         cv2.circle(image, center=(int(kp[0]), int(kp[1])), radius=7, color=(255,0,0), thickness=-1)
+                        log_kps = log_kps + kp
             
                 self.estimated_result_image.emit(image)
+                self.estimated_result_kpt.emit(log_kps)
             
     
     # start pose estimating
