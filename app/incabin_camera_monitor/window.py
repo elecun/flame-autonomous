@@ -13,6 +13,7 @@ from PyQt6.uic import loadUi
 from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 import json
 import numpy as np
+from datetime import datetime
 
 from vision.camera.uvc import Controller as IncabinCameraController
 from util.logger.video import VideoRecorder
@@ -106,7 +107,7 @@ class AppWindow(QMainWindow):
                 # create human pose estimator
                 self.__hpe_container[id] = PoseModel(modelname=self.__configure["hpe_model"], id=id)
                 self.__camera_container[id].frame_update_signal.connect(self.__hpe_container[id].predict)
-                # self.__hpe_container[id].estimated_result_image.connect(self.show_estimated_frame)
+                # self.__hpe_container[id].estimated_result_image.connect(self.show_estimated_frame) # draw key points
                 
                 # start grab thread
                 self.__camera_container[id].begin()
@@ -140,6 +141,13 @@ class AppWindow(QMainWindow):
         # converting color format
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
+        # draw information
+        t_start = datetime.now()
+        id = self.sender().get_camera_id()
+        
+        cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
+        cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
+        
         #converting ndarray to qt image
         _h, _w, _ch = rgb_image.shape
         _bpl = _ch*_w # bytes per line
@@ -147,7 +155,6 @@ class AppWindow(QMainWindow):
 
         # converting qt image to QPixmap
         pixmap = QPixmap.fromImage(qt_image)
-        id = self.sender().get_camera_id()
 
         # draw on window
         try:
