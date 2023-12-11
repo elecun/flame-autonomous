@@ -12,13 +12,11 @@ from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 from datetime import datetime
 import pandas as pd
 import numpy as np
-from scipy import signal as scisignal
 from PIL import ImageQt, Image
 from sys import platform
 import paho.mqtt.client as mqtt
 import pyqtgraph as graph
 import librosa
-from matplotlib import pyplot as plt
 
 from util.logger.console import ConsoleLogger
 
@@ -155,10 +153,6 @@ class AppWindow(QMainWindow):
                     # plot
                     self.__frame_win_fft_plot.plot(frequency, amplitude, name=ch, pen=graph.mkPen(color=colorlist[idx], width=2))
                     
-                    # for spectogram
-                    # f, tt, Sxx = scisignal.spectrogram(_data, fs=__sampling_freq, scaling='density')
-                    
-                    
                     # calc spectogram
                     graph.setConfigOptions(imageAxisOrder='row-major') # axis rotate
                     stft = librosa.stft(y=_data.to_numpy(), win_length=int(__sampling_freq), hop_length=1, window='hann', n_fft=int(__sampling_freq))
@@ -167,7 +161,6 @@ class AppWindow(QMainWindow):
                     
                     # add spectogram item
                     self.__spectogram_channels.addItem(ch)
-                        
                 
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"{e}")
