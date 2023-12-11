@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1405</width>
-    <height>1140</height>
+    <width>1428</width>
+    <height>1056</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -113,7 +113,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab_series">
      <attribute name="title">
@@ -252,8 +252,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1405</width>
-     <height>43</height>
+     <width>1428</width>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuControl">

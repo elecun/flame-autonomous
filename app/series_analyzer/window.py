@@ -175,6 +175,11 @@ class AppWindow(QMainWindow):
             ch = self.__spectogram_channels.currentText()
             image = graph.ImageItem(image=self.__spectogram_result[ch])
             cmap = graph.colormap.getFromMatplotlib("jet")
+            
+            self.__frame_win_spectogram_plot.setTitle(f"{ch} Spectogram(Linear)", color="k", size="25pt")
+            styles = {"color": "#000", "font-size": "15px"}
+            self.__frame_win_spectogram_plot.setLabel("left", "Frequency(Hz)", **styles)
+            self.__frame_win_spectogram_plot.setLabel("bottom", "Time(ms)", **styles)
             self.__frame_win_spectogram_plot.addItem(image)
             image.setColorMap(colorMap=cmap)
         except Exception as e:
