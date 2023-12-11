@@ -6,12 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1428</width>
-    <height>1056</height>
+    <width>1405</width>
+    <height>1140</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string/>
+  </property>
+  <property name="windowIcon">
+   <iconset theme="document-save-as"/>
+  </property>
+  <property name="toolTip">
+   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save as...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
   </property>
   <property name="styleSheet">
    <string notr="true"/>
@@ -21,7 +27,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>660</y>
+      <y>710</y>
       <width>501</width>
       <height>111</height>
      </rect>
@@ -74,7 +80,7 @@
       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
      </property>
     </widget>
-    <widget class="QPushButton" name="pushButton">
+    <widget class="QPushButton" name="btn_update">
      <property name="geometry">
       <rect>
        <x>390</x>
@@ -91,14 +97,14 @@
    <widget class="QTabWidget" name="tabWidget">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>0</x>
       <y>0</y>
-      <width>1411</width>
-      <height>661</height>
+      <width>1410</width>
+      <height>701</height>
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: rgb(50,50,50);</string>
+     <string notr="true"/>
     </property>
     <property name="tabPosition">
      <enum>QTabWidget::South</enum>
@@ -107,7 +113,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="tab_series">
      <attribute name="title">
@@ -172,8 +178,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1405</width>
-        <height>631</height>
+        <width>1400</width>
+        <height>630</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -186,13 +192,36 @@
        <enum>QFrame::Plain</enum>
       </property>
      </widget>
+     <widget class="QComboBox" name="dropdown_channels">
+      <property name="geometry">
+       <rect>
+        <x>1230</x>
+        <y>640</y>
+        <width>171</width>
+        <height>21</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>1170</x>
+        <y>641</y>
+        <width>58</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Channel :</string>
+      </property>
+     </widget>
     </widget>
    </widget>
    <widget class="QGroupBox" name="groupBox_2">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>780</y>
+      <y>830</y>
       <width>501</width>
       <height>211</height>
      </rect>
@@ -223,8 +252,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1428</width>
-     <height>24</height>
+     <width>1405</width>
+     <height>43</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuControl">
