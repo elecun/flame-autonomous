@@ -162,3 +162,5 @@ vision/HPE/pretrained/yolov8l-pose.pt
 vision/HPE/pretrained/yolov8x-pose.pt
 vision/HPE/pretrained/yolov8m-pose.pt
 vision/HPE/pretrained/yolov8x-pose-p6.pt
+
+dataset/
