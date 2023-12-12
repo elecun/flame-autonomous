@@ -27,9 +27,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>710</y>
+      <y>700</y>
       <width>501</width>
-      <height>111</height>
+      <height>71</height>
      </rect>
     </property>
     <property name="title">
@@ -80,17 +80,17 @@
       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
      </property>
     </widget>
-    <widget class="QPushButton" name="btn_update">
+    <widget class="QPushButton" name="btn_parameter_apply">
      <property name="geometry">
       <rect>
-       <x>390</x>
-       <y>70</y>
-       <width>100</width>
+       <x>380</x>
+       <y>30</y>
+       <width>111</width>
        <height>32</height>
       </rect>
      </property>
      <property name="text">
-      <string>Update</string>
+      <string>Apply &amp; Update</string>
      </property>
     </widget>
    </widget>
@@ -220,8 +220,8 @@
    <widget class="QGroupBox" name="groupBox_2">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>830</y>
+      <x>910</x>
+      <y>700</y>
       <width>501</width>
       <height>211</height>
      </rect>
@@ -244,6 +244,132 @@
      <attribute name="horizontalHeaderStretchLastSection">
       <bool>true</bool>
      </attribute>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_3">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>780</y>
+      <width>501</width>
+      <height>141</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Batch Processing (Spectogram)</string>
+    </property>
+    <widget class="QPushButton" name="btn_working_dir_selection">
+     <property name="geometry">
+      <rect>
+       <x>410</x>
+       <y>30</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0, 0, 0);</string>
+     </property>
+     <property name="text">
+      <string>Select</string>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>open.ico</normaloff>open.ico</iconset>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="edit_working_dir">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>30</y>
+       <width>251</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_3">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>131</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Working Directory :</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btn_batch_start_spectogram">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>100</y>
+       <width>171</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Spectogram Generation</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_5">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>60</y>
+       <width>131</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Output Directory :</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="edit_batch_output_dir">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>60</y>
+       <width>251</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btn_batch_output_dir_selection">
+     <property name="geometry">
+      <rect>
+       <x>410</x>
+       <y>60</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0, 0, 0);</string>
+     </property>
+     <property name="text">
+      <string>Select</string>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>open.ico</normaloff>open.ico</iconset>
+     </property>
     </widget>
    </widget>
   </widget>

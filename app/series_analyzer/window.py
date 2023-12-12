@@ -6,7 +6,7 @@ Time-series Data Analyzer Application Window Class
 import sys, os
 import pathlib
 from PyQt6.QtGui import QImage, QPixmap, QCloseEvent, QStandardItemModel, QStandardItem
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QFileDialog, QFrame, QVBoxLayout, QComboBox
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QFileDialog, QFrame, QVBoxLayout, QComboBox, QLineEdit
 from PyQt6.uic import loadUi
 from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 from datetime import datetime
@@ -17,8 +17,10 @@ from sys import platform
 import paho.mqtt.client as mqtt
 import pyqtgraph as graph
 import librosa
+from joblib import Parallel, delayed, parallel_backend
 
 from util.logger.console import ConsoleLogger
+from analysis.series.spectogram import Spectogram
 
 '''
 Main Window
@@ -47,7 +49,7 @@ class AppWindow(QMainWindow):
                 else:
                     raise Exception(f"Cannot found UI file : {ui_path}")
                 
-                # frame components preparation
+                # frame window components preparation
                 self.__frame_win_series = self.findChild(QFrame, name="frame_series_view")
                 self.__frame_win_series_layout.addWidget(self.__frame_win_series_plot)
                 self.__frame_win_series_layout.setContentsMargins(0, 0, 0, 0)
@@ -68,16 +70,17 @@ class AppWindow(QMainWindow):
                 self.__frame_win_spectogram_plot.setBackground('w')
                 self.__frame_win_spectogram.setLayout(self.__frame_win_spectorgram_layout)
                 
+                # other GUI components
                 self.__spectogram_channels = self.findChild(QComboBox, name="dropdown_channels")
-                
+                self.__spectogram_channels.currentIndexChanged.connect(self.on_changed_spectogram_channel_index)
                 
                 # connection gui event callback functions
                 self.actionOpen_CSV_File.triggered.connect(self.on_select_csv_open)
-                self.btn_update.clicked.connect(self.on_click_update)
-                self.__spectogram_channels.currentIndexChanged.connect(self.on_changed_spectogram_channel_index)
+                self.btn_parameter_apply.clicked.connect(self.on_click_parameter_apply)
+                self.btn_batch_start_spectogram.clicked.connect(self.on_click_batch_start_spectogram)
+                self.btn_working_dir_selection.clicked.connect(self.on_click_working_dir_selection)
+                self.btn_batch_output_dir_selection.clicked.connect(self.on_click_batch_output_dir_selection)
                 
-                # menu event callback function connection
-                #self.actionBatch_Process.triggered.connect(self.on_select_batch_process)
                 
                 # variables
                 self.__spectogram_result = {}
@@ -157,6 +160,10 @@ class AppWindow(QMainWindow):
                     graph.setConfigOptions(imageAxisOrder='row-major') # axis rotate
                     stft = librosa.stft(y=_data.to_numpy(), win_length=int(__sampling_freq), hop_length=1, window='hann', n_fft=int(__sampling_freq))
                     magnitude = np.abs(stft)
+                    
+                    # amplitude to db
+                    db = librosa.amplitude_to_db(magnitude, ref=np.max)
+    
                     self.__spectogram_result[ch] = magnitude
                     
                     # add spectogram item
@@ -166,8 +173,55 @@ class AppWindow(QMainWindow):
                 QMessageBox.critical(self, "Error", f"{e}")
     
     # redraw and calculation by update
-    def on_click_update(self):
+    def on_click_parameter_apply(self):
         pass
+    
+    def batch_spectogram(self, csv_file_in, file_out):
+        pass
+    
+    # spectogram generation batch processing start
+    def on_click_batch_start_spectogram(self):
+        _working_path = self.findChild(QLineEdit, name="edit_working_dir").text()
+        _output_path = self.findChild(QLineEdit, name="edit_batch_output_dir").text()
+        _sampling_freq = int(self.edit_sampling_freq.text())
+    
+        _spectogram = Spectogram()
+        if _working_path and _output_path:
+            # read files under working directory without subdirectory
+            files = [(pathlib.Path(_working_path)/f).as_posix() for f in os.listdir(_working_path) if f.endswith('.csv')]
+            for f in files:
+                self.__console.info(f"working file : {f}")
+                _spectogram.generate_to_image(csv_file_in=f, out_path=_output_path, fs=_sampling_freq)
+            
+            # Parallel(n_jobs=-1, prefer="threads")(delayed(Spectogram.generate_to_image(k, _output_path))(k) for k in files)
+        else:
+            self.__console.warning("No batch processing working path or output path")
+    
+    
+    # select working directory
+    def on_click_working_dir_selection(self):
+        # open directory selection
+        directory = QFileDialog.getExistingDirectory(None, "Choose Working Directory")
+        if directory:
+            self.__console.info(f"Batch working directory : {directory}")
+                
+            # show on editbox
+            _edit_working = self.findChild(QLineEdit, name="edit_working_dir")
+            _edit_working.setText(directory)
+    
+    
+    # select output directory
+    def on_click_batch_output_dir_selection(self):
+        
+        # open directory selection
+        directory = QFileDialog.getExistingDirectory(None, "Choose Output Directory")
+        if directory:
+            self.__console.info(f"Batch output directory : {directory}")
+                
+            # show on editbox
+            _edit_output = self.findChild(QLineEdit, name="edit_batch_output_dir")
+            _edit_output.setText(directory)
+    
     
     # changed channel index by user
     def on_changed_spectogram_channel_index(self, index):
@@ -182,6 +236,7 @@ class AppWindow(QMainWindow):
             self.__frame_win_spectogram_plot.setLabel("bottom", "Time(ms)", **styles)
             self.__frame_win_spectogram_plot.addItem(image)
             image.setColorMap(colorMap=cmap)
+            
         except Exception as e:
             self.__console.critical(f"{e}")
                 
@@ -202,5 +257,4 @@ class AppWindow(QMainWindow):
     def closeEvent(self, a0: QCloseEvent | None) -> None:
         
         self.__console.info("Terminated Successfully")
-        
         return super().closeEvent(a0)
