@@ -439,7 +439,7 @@ color: rgb(0, 0, 0);</string>
        <normaloff>open.ico</normaloff>open.ico</iconset>
      </property>
     </widget>
-    <widget class="QCheckBox" name="chk_output_resize_224">
+    <widget class="QCheckBox" name="chk_output_resize">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -449,7 +449,7 @@ color: rgb(0, 0, 0);</string>
       </rect>
      </property>
      <property name="text">
-      <string>Output Image Resize(224x224)</string>
+      <string>Output Image Resize</string>
      </property>
     </widget>
    </widget>
@@ -479,23 +479,9 @@ color: rgb(0, 0, 0);</string>
     <string>Open CSV File</string>
    </property>
   </action>
-  <action name="actionOpen_Dataset_Directory">
-   <property name="icon">
-    <iconset theme="folder-open">
-     <normaloff>.</normaloff>.</iconset>
-   </property>
-   <property name="text">
-    <string>Open Dataset Directory</string>
-   </property>
-  </action>
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
-   </property>
-  </action>
-  <action name="actionGenerate_Spectogram">
-   <property name="text">
-    <string>Generate Spectogram</string>
    </property>
   </action>
  </widget>

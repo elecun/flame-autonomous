@@ -42,7 +42,7 @@ class Spectogram:
                 _data = np.transpose(__csv_normalized[ch])
                 
                 graph.setConfigOptions(imageAxisOrder='row-major')
-                stft = librosa.stft(y=_data.to_numpy(), win_length=fs, hop_length=1, window='hann', n_fft=fs)
+                stft = librosa.stft(y=_data.to_numpy(), win_length=None, hop_length=1, window='hann', n_fft=fs)
                 magnitude = np.abs(stft)
                 
                 db = librosa.amplitude_to_db(magnitude, ref=np.max)
@@ -61,7 +61,7 @@ class Spectogram:
                 
                 # resize option
                 if opt_resize:
-                    resized = cv2.resize(flipped, (224, 224))
+                    resized = cv2.resize(flipped, (500, 500))
                     cv2.imwrite(outfile.as_posix(), resized)
                 else:
                     cv2.imwrite(outfile.as_posix(), flipped)

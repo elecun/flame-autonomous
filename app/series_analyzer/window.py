@@ -189,7 +189,7 @@ class AppWindow(QMainWindow):
                 
                 # calc spectogram
                 graph.setConfigOptions(imageAxisOrder='row-major') # axis rotate
-                stft = librosa.stft(y=_data.to_numpy(), win_length=int(__sampling_freq), hop_length=1, window='hann', n_fft=int(__sampling_freq))
+                stft = librosa.stft(y=_data.to_numpy(), win_length=None, hop_length=1, window='hann', n_fft=int(__sampling_freq))
                 magnitude = np.abs(stft)
                 
                 # amplitude to db
@@ -220,7 +220,7 @@ class AppWindow(QMainWindow):
         _output_path = self.findChild(QLineEdit, name="edit_batch_output_dir").text()
         _sampling_freq = int(self.edit_sampling_freq.text())
         
-        _opt_resize = self.findChild(QCheckBox, name="chk_output_resize_224").isChecked()
+        _opt_resize = self.findChild(QCheckBox, name="chk_output_resize").isChecked()
     
         _spectogram = Spectogram()
         if _working_path and _output_path:
@@ -235,7 +235,7 @@ class AppWindow(QMainWindow):
             # work in parallel
             Parallel(n_jobs=-1, prefer="threads", verbose=10)(delayed(_spectogram.generate_to_image)(f, _output_path, _sampling_freq, _opt_resize) for f in files)
             
-            QMessageBox.information(self, "Done", f"Batch Processing(Spectogram image generation) is Done.")
+            QMessageBox.information(self, "Done", f"Batch Processing is Done.")
         else:
             self.__console.warning("No batch processing working path or output path")
     
