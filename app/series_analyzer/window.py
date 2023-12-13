@@ -6,7 +6,7 @@ Time-series Data Analyzer Application Window Class
 import sys, os
 import pathlib
 from PyQt6.QtGui import QImage, QPixmap, QCloseEvent, QStandardItemModel, QStandardItem
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QFileDialog, QFrame, QVBoxLayout, QComboBox, QLineEdit
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QFileDialog, QFrame, QVBoxLayout, QComboBox, QLineEdit, QCheckBox
 from PyQt6.uic import loadUi
 from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 from datetime import datetime
@@ -184,16 +184,23 @@ class AppWindow(QMainWindow):
         _working_path = self.findChild(QLineEdit, name="edit_working_dir").text()
         _output_path = self.findChild(QLineEdit, name="edit_batch_output_dir").text()
         _sampling_freq = int(self.edit_sampling_freq.text())
+        
+        _opt_resize = self.findChild(QCheckBox, name="chk_output_resize_224").isChecked()
     
         _spectogram = Spectogram()
         if _working_path and _output_path:
+            
             # read files under working directory without subdirectory
             files = [(pathlib.Path(_working_path)/f).as_posix() for f in os.listdir(_working_path) if f.endswith('.csv')]
-            for f in files:
-                self.__console.info(f"working file : {f}")
-                _spectogram.generate_to_image(csv_file_in=f, out_path=_output_path, fs=_sampling_freq)
             
-            # Parallel(n_jobs=-1, prefer="threads")(delayed(Spectogram.generate_to_image(k, _output_path))(k) for k in files)
+            # with sequential with single thread
+            # for f in files:
+            #     _spectogram.generate_to_image(csv_file_in=f, out_path=_output_path, fs=_sampling_freq, opt_resize=_opt_resize)
+            
+            # work in parallel
+            Parallel(n_jobs=-1, prefer="threads")(delayed(_spectogram.generate_to_image)(f, _output_path, _sampling_freq, _opt_resize) for f in files)
+            
+            QMessageBox.information(self, "Done", f"Batch Processing(Spectogram image generation) is Done.")
         else:
             self.__console.warning("No batch processing working path or output path")
     

@@ -9,6 +9,9 @@ import pandas as pd
 import numpy as np
 import librosa
 import pathlib
+import pyqtgraph as graph
+import cv2
+import os
 
 from util.logger.console import ConsoleLogger
 
@@ -19,7 +22,7 @@ class Spectogram:
     
     
     # spectogram image generation
-    def generate_to_image(self, csv_file_in:str, out_path:str, fs:int):
+    def generate_to_image(self, csv_file_in:str, out_path:str, fs:int, opt_resize:bool):
         
         try:
             filename = pathlib.Path(csv_file_in).stem
@@ -32,16 +35,39 @@ class Spectogram:
             for idx, ch in enumerate(__csv_raw.columns):
                 _data = np.transpose(__csv_normalized[ch])
                 
+                graph.setConfigOptions(imageAxisOrder='row-major')
                 stft = librosa.stft(y=_data.to_numpy(), win_length=fs, hop_length=1, window='hann', n_fft=fs)
                 magnitude = np.abs(stft)
                 
-                scaled_data = np.round(255 * ((magnitude - np.min(magnitude)) / (np.max(magnitude) - np.min(magnitude))))
+                db = librosa.amplitude_to_db(magnitude, ref=np.max)
                 
+                image = graph.ImageItem(image=magnitude)
+                cmap = graph.colormap.getFromMatplotlib("jet")
+                image.setColorMap(colorMap=cmap)
                 
-                print(scaled_data)
-                image = Image.fromarray(scaled_data)
-                outfile = pathlib.Path(out_path)/f"{filename}_{ch}.tiff"
-                image.save(outfile)
+                # save image
+                rawfile = pathlib.Path(out_path)/f"{filename}_{ch}_raw.png"
+                image.save(rawfile.as_posix())
+                
+                outfile = pathlib.Path(out_path)/f"{filename}_{ch}.png"
+                raw_image = cv2.imread(rawfile.as_posix())
+                flipped = cv2.flip(raw_image, 0)
+                
+                # resize option
+                if opt_resize:
+                    resized = cv2.resize(flipped, (224, 224))
+                    cv2.imwrite(outfile.as_posix(), resized)
+                else:
+                    cv2.imwrite(outfile.as_posix(), flipped)
+                
+                # remove temporary raw file
+                try:
+                    os.remove(rawfile.as_posix())
+                    
+                except FileNotFoundError:
+                    self.__console.critical(f"Cannot found {rawfile.stem}")
+                except Exception as e:
+                    self.__console.critical(f"e")
             
         except Exception as e:
             self.__console.critical(f"{e}")
