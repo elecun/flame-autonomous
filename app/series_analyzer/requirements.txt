@@ -8,3 +8,6 @@ twisted
 joblib
 pyqtgraph
 librosa
+torch
+torchvision
+torchinfo

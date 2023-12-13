@@ -32,6 +32,12 @@ class Spectogram:
             __csv_mean = __csv_raw.mean()
             __csv_normalized = __csv_raw - __csv_mean
             
+            
+            # create directory
+            for idx, ch in enumerate(__csv_raw.columns):
+                (pathlib.Path(out_path) / ch).mkdir(parents=True, exist_ok=True)
+            
+            # generate spectogram
             for idx, ch in enumerate(__csv_raw.columns):
                 _data = np.transpose(__csv_normalized[ch])
                 
@@ -46,10 +52,10 @@ class Spectogram:
                 image.setColorMap(colorMap=cmap)
                 
                 # save image
-                rawfile = pathlib.Path(out_path)/f"{filename}_{ch}_raw.png"
+                rawfile = pathlib.Path(out_path)/ch/f"{filename}_raw.png"
                 image.save(rawfile.as_posix())
                 
-                outfile = pathlib.Path(out_path)/f"{filename}_{ch}.png"
+                outfile = pathlib.Path(out_path)/ch/f"{filename}.png"
                 raw_image = cv2.imread(rawfile.as_posix())
                 flipped = cv2.flip(raw_image, 0)
                 
