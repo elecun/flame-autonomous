@@ -19,6 +19,7 @@ import pyqtgraph as graph
 import librosa
 from joblib import Parallel, delayed, parallel_backend
 from typing import Union
+from matplotlib import pyplot as plt
 
 from util.logger.console import ConsoleLogger
 from analysis.series.spectogram import Spectogram
@@ -191,6 +192,19 @@ class AppWindow(QMainWindow):
                 graph.setConfigOptions(imageAxisOrder='row-major') # axis rotate
                 stft = librosa.stft(y=_data.to_numpy(), win_length=None, hop_length=1, window='hann', n_fft=int(__sampling_freq))
                 magnitude = np.abs(stft)
+                
+                # mel spectogram
+                mel_spectrogram = librosa.feature.melspectrogram(y=_data.to_numpy(), htk=True, sr=__sampling_freq, hop_length=1, win_length=None, n_fft=int(__sampling_freq))
+                # Mel-spectrogram을 데시벨로 변환 (옵션)
+                mel_spectrogram_db = librosa.power_to_db(mel_spectrogram, ref=np.max)
+
+                # Mel-spectrogram을 시각화
+                cwtmatr, freqs = librosa.core.cqt(_data.to_numpy(), sr=__sampling_freq, hop_length=500, n_bins=12)
+                plt.figure(figsize=(10, 6))
+                librosa.display.specshow(librosa.amplitude_to_db(cwtmatr, ref=np.max), sr=__sampling_freq, x_axis='time', y_axis='cqt_note')
+                plt.colorbar(format='%+2.0f dB')
+                plt.title('Scalogram')
+                plt.show()
                 
                 # amplitude to db
                 db = librosa.amplitude_to_db(magnitude, ref=np.max)

@@ -46,7 +46,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>1000</string>
+      <string>2000</string>
      </property>
     </widget>
     <widget class="QLabel" name="label">
@@ -452,6 +452,19 @@ color: rgb(0, 0, 0);</string>
       <string>Output Image Resize</string>
      </property>
     </widget>
+    <widget class="QCheckBox" name="chk_use_melspectogram">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>130</y>
+       <width>211</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Use Mel-Spectogram</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -460,7 +473,7 @@ color: rgb(0, 0, 0);</string>
      <x>0</x>
      <y>0</y>
      <width>1410</width>
-     <height>43</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuControl">
