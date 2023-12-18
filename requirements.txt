@@ -5,4 +5,4 @@ opencv-python
 paho-mqtt
 pynvml
 psutil
-cololog
+colorlog
