@@ -12,6 +12,7 @@ import pathlib
 import pyqtgraph as graph
 import cv2
 import os
+from typing import Union
 
 from util.logger.console import ConsoleLogger
 
@@ -19,6 +20,20 @@ from util.logger.console import ConsoleLogger
 class Spectogram:
     def __init__(self) -> None:
         self.__console = ConsoleLogger.get_logger()
+        
+    # save to image file(PNG)
+    def save_to_image(self, spectogram:np.ndarray, to_path:Union[pathlib.Path, str]):
+        try:
+            if type(to_path) == str:
+                _out_file = pathlib.Path(to_path)
+            else:
+                _out_file = to_path
+                
+            if type(spectogram) == np.ndarray:
+                pass
+                
+        except Exception as e:
+            self.__console.warning(f"{e}")
     
     
     # spectogram image generation

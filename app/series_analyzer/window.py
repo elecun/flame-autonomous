@@ -20,10 +20,11 @@ import librosa
 from joblib import Parallel, delayed, parallel_backend
 from typing import Union
 from matplotlib import pyplot as plt
+import cv2
 
 from util.logger.console import ConsoleLogger
 from analysis.series.spectogram import Spectogram
-from app.series_analyzer.model import FaultDetection_Resnet
+from app.series_analyzer.model import PurgeFanFaultClassification_Resnet
 
 '''
 Main Window
@@ -90,7 +91,7 @@ class AppWindow(QMainWindow):
                 self.btn_batch_start_spectogram.clicked.connect(self.on_click_batch_start_spectogram)
                 self.btn_working_dir_selection.clicked.connect(self.on_click_working_dir_selection)
                 self.btn_batch_output_dir_selection.clicked.connect(self.on_click_batch_output_dir_selection)
-                self.btn_run_model_test.clicked.connect(self.on_click_run_model_test)
+                self.btn_run_model_inference.clicked.connect(self.on_click_run_model_inference)
                 
                 # variables
                 self.__spectogram_result = {}
@@ -122,6 +123,7 @@ class AppWindow(QMainWindow):
             if csv_file is not None:
                 self.__current_csv_file = csv_file
             
+            # log csv file path
             self.__console.info(f"Load CSV File : {self.__current_csv_file}")
             
             # clear all plots and components
@@ -140,7 +142,7 @@ class AppWindow(QMainWindow):
             # show info
             self.statusBar().showMessage(f"{self.__current_csv_file} {__csv_raw.shape}")
             
-            # draw graph
+            # draw raw time-series data graph
             self.__frame_win_series_plot.setTitle(f"{pathlib.Path(self.__current_csv_file).stem} Data", color="k", size="25pt")
             styles = {"color": "#000", "font-size": "15px"}
             self.__frame_win_series_plot.setLabel("left", "Value", **styles)
@@ -164,6 +166,7 @@ class AppWindow(QMainWindow):
             __csv_mean = __csv_raw.mean()
             __csv_normalized = __csv_raw - __csv_mean # note : make signal mean value to zero(=remove DC elements)
             
+            # analysis for each channel
             for idx, ch in enumerate(__csv_raw.columns):
                 _data = np.transpose(__csv_normalized[ch])
                 
@@ -194,17 +197,17 @@ class AppWindow(QMainWindow):
                 magnitude = np.abs(stft)
                 
                 # mel spectogram
-                mel_spectrogram = librosa.feature.melspectrogram(y=_data.to_numpy(), htk=True, sr=__sampling_freq, hop_length=1, win_length=None, n_fft=int(__sampling_freq))
+                #mel_spectrogram = librosa.feature.melspectrogram(y=_data.to_numpy(), htk=True, sr=__sampling_freq, hop_length=1, win_length=None, n_fft=int(__sampling_freq))
                 # Mel-spectrogram을 데시벨로 변환 (옵션)
-                mel_spectrogram_db = librosa.power_to_db(mel_spectrogram, ref=np.max)
+                #mel_spectrogram_db = librosa.power_to_db(mel_spectrogram, ref=np.max)
 
                 # Mel-spectrogram을 시각화
-                cwtmatr, freqs = librosa.core.cqt(_data.to_numpy(), sr=__sampling_freq, hop_length=500, n_bins=12)
-                plt.figure(figsize=(10, 6))
-                librosa.display.specshow(librosa.amplitude_to_db(cwtmatr, ref=np.max), sr=__sampling_freq, x_axis='time', y_axis='cqt_note')
-                plt.colorbar(format='%+2.0f dB')
-                plt.title('Scalogram')
-                plt.show()
+                # cwtmatr, freqs = librosa.core.cqt(_data.to_numpy(), sr=__sampling_freq, hop_length=500, n_bins=12)
+                # plt.figure(figsize=(10, 6))
+                # librosa.display.specshow(librosa.amplitude_to_db(cwtmatr, ref=np.max), sr=__sampling_freq, x_axis='time', y_axis='cqt_note')
+                # plt.colorbar(format='%+2.0f dB')
+                # plt.title('Scalogram')
+                # plt.show()
                 
                 # amplitude to db
                 db = librosa.amplitude_to_db(magnitude, ref=np.max)
@@ -279,17 +282,17 @@ class AppWindow(QMainWindow):
             _edit_output.setText(directory)
     
     # model run
-    def on_click_run_model_test(self):
+    def on_click_run_model_inference(self):
         selected_model = self.__model_selection.currentText()
         self.__console.info(f"{selected_model} model is working..")
         _result = "-"
         
         _label_result = self.findChild(QLabel, "label_model_result")
         
-        if selected_model.lower() == "anomaly detection":
+        if selected_model.lower() == "purgefan fault classification":
             # model load
-            _model = FaultDetection_Resnet()
-            if _model.predict():
+            _model = PurgeFanFaultClassification_Resnet()
+            if _model.predict(image_path=None):
                 # show results
                 _label_result.setStyleSheet("color: red;")
                 _result = "Abnormal\n(Fault)"
@@ -319,6 +322,19 @@ class AppWindow(QMainWindow):
             self.__frame_win_spectogram_plot.setLabel("bottom", "Time(ms)", **styles)
             self.__frame_win_spectogram_plot.addItem(image)
             image.setColorMap(colorMap=cmap)
+            
+            # create temporary directory for model inference
+            __tmp_path = (pathlib.Path(__file__).parent) / "tmp"
+            __tmp_path.mkdir(parents=True, exist_ok=True)
+            
+            # save to tmp image (500x500)
+            rawfile = __tmp_path/f"{ch}_raw.png"
+            image.save(rawfile.as_posix())
+            outfile = __tmp_path/f"tmp.png"
+            raw_image = cv2.imread(rawfile.as_posix())
+            flipped = cv2.flip(raw_image, 0)
+            resized = cv2.resize(flipped, (500, 500))
+            cv2.imwrite(outfile.as_posix(), resized)
             
         except Exception as e:
             self.__console.critical(f"{e}")
