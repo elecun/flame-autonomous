@@ -3,8 +3,19 @@ Purge Fan Fault Classification(Binary) Model using Residual Network with Pytorch
 @author Byunghun Hwang<bh.hwang@iae.re.kr>
 '''
 import torch
+import torch.nn as nn
 import torchvision
 import torchvision.models as models
+import torch.nn.functional as F
+from torchvision.datasets.utils import download_url
+from torchvision.datasets import ImageFolder
+from torch.utils.data import DataLoader
+import torchvision.transforms as transform
+from torch.utils.data import random_split
+from torchvision.utils import make_grid
+from torchinfo import summary
+
+from PIL import Image
 import pathlib
 import os
 from typing import Union
@@ -12,28 +23,32 @@ import argparse
 
 from util.logger.console import ConsoleLogger
 
+# global functions
+# transfer data into the selected device
+def to_device(data, device):
+    if isinstance(data, (list, tuple)):
+        return [to_device(x, device) for x in data]
+    return data.to(device, non_blocking=True)
 
-ROOT_PATH = pathlib.Path(__file__).parent
-
-
-# Model Base Class
-class ClassificationBase(torch.nn.Module):
-    def accuracy(outputs, labels):
+# Model base class
+class ModelBase(nn.Module):
+    @staticmethod
+    def __accuracy(outputs, labels):
         _, preds = torch.max(outputs, dim=1)
         return torch.tensor(torch.sum(preds == labels).item() / len(preds))
 
     def training_step(self, batch):
         images, labels = batch 
         out = self(images)                  # Generate predictions
-        loss = torch.nn.functional.cross_entropy(out, labels) # Calculate loss
-        acc = self.accuracy(out, labels)  
+        loss = F.cross_entropy(out, labels) # Calculate loss
+        acc = self.__accuracy(out, labels)  
         return loss,acc
     
     def validation_step(self, batch):
         images, labels = batch 
         out = self(images)                    # Generate predictions
-        loss = torch.nn.functional.cross_entropy(out, labels)   # Calculate loss
-        acc = self.accuracy(out, labels)           # Calculate accuracy
+        loss = F.cross_entropy(out, labels)   # Calculate loss
+        acc = self.__accuracy(out, labels)    # Calculate accuracy
         return {'val_loss': loss.detach(), 'val_acc': acc}
         
     def validation_epoch_end(self, outputs):
@@ -42,36 +57,39 @@ class ClassificationBase(torch.nn.Module):
         batch_accs = [x['val_acc'] for x in outputs]
         epoch_acc = torch.stack(batch_accs).mean()      # Combine accuracies
         return {'val_loss': epoch_loss.item(), 'val_acc': epoch_acc.item()}
-
-# Resnet model
-class ResNet9(ClassificationBase):
-    def __init__(self, in_channels, num_classes):
+    
+    def epoch_end(self, epoch, result):
+        print("Epoch [{}], train_loss: {:.4f}, train_acc: {:.4f}, val_loss: {:.4f}, val_acc: {:.4f}, last_lr: {:.5f}".format(
+            epoch+1, result['train_loss'], result['train_accuracy'], result['val_loss'], result['val_acc'], result['lrs'][-1]))
+        
+class ResNet(ModelBase):
+    # resnet layer block : conv2d -> batch normalization -> ReLu
+    @staticmethod
+    def __conv_block(in_channels, out_channels, pool=False):
+        # output dim and input dim are the same (kernel size=3, padding=1)
+        layers = [nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1), nn.BatchNorm2d(num_features=out_channels), nn.ReLU(inplace=True)]
+        if pool: 
+            layers.append(nn.MaxPool2d(kernel_size=2))  # max pooling with 2 dim kernel
+        return nn.Sequential(*layers) # combine into single block
+    
+    def __init__(self, channels, n_classes):
         super().__init__()
         
-        self.conv1 = self.conv_block(in_channels, 64)
-        self.conv2 = self.conv_block(64, 128, pool=True)
-        self.res1 = torch.nn.Sequential(self.conv_block(128, 128), self.conv_block(128, 128))
+        self.conv1 = self.__conv_block(channels, 64)
+        self.conv2 = self.__conv_block(64, 128, pool=True)
+        self.res1 = nn.Sequential(self.__conv_block(128, 128), self.__conv_block(128, 128))
         
-        self.conv3 = self.conv_block(128, 256, pool=True)
-        self.conv4 = self.conv_block(256, 512, pool=True)
-        self.res2 = torch.nn.Sequential(self.conv_block(512, 512), self.conv_block(512, 512))
+        self.conv3 = self.__conv_block(128, 256, pool=True)
+        self.conv4 = self.__conv_block(256, 512, pool=True)
+        self.res2 = nn.Sequential(self.__conv_block(512, 512), self.__conv_block(512, 512))
         
-        self.classifier = torch.nn.Sequential(self.torch.nn.AdaptiveMaxPool2d((1,1)), 
-                                        torch.nn.Flatten(), 
-                                        torch.nn.Dropout(0.2),
-                                        torch.nn.Linear(512, num_classes))
+        self.classifier = nn.Sequential(nn.AdaptiveMaxPool2d((1,1)), 
+                                        nn.Flatten(), 
+                                        nn.Dropout(0.2),
+                                        nn.Linear(512, n_classes))
         
-    # design residual model
-    def conv_block(in_channels, out_channels, pool=False):
-        layers = [torch.nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1), 
-                torch.nn.BatchNorm2d(out_channels), 
-                torch.nn.ReLU(inplace=True)]
-        if pool: layers.append(torch.nn.MaxPool2d(2))
-        return torch.nn.Sequential(*layers)
-    
-    # feed forward    
-    def forward(self, x):
-        out = self.conv1(x)
+    def forward(self, xb):
+        out = self.conv1(xb)
         out = self.conv2(out)
         out = self.res1(out) + out
         out = self.conv3(out)
@@ -79,30 +97,38 @@ class ResNet9(ClassificationBase):
         out = self.res2(out) + out
         out = self.classifier(out)
         return out
-    
 
-# ResNet
+
+# ResNet for PurgeFan Fault Classification
 class PurgeFanFaultClassification_Resnet:
-    def __init__(self) -> None:
+    def __init__(self, modelname:str) -> None:
         
         # for logging
         self.__console = ConsoleLogger.get_logger()
         
+        self.__classes = ['fault', 'normal']
         self.__model = None # torch model instance
         self.__device = None # device to perform
-        self.__model_path = pathlib.Path(__file__).parent / "model" / "resnet9_pfc_v1.pth"
+        self.__model_path = pathlib.Path(__file__).parent / "model" / modelname
         self.__console.info(f"Model : {self.__model_path.as_posix()}")
         
         if os.path.isfile(self.__model_path.as_posix()):
-            self.__device = self.get_default_device()
-            self.__model = self.to_device(ResNet9(3, 2), self.__device)
-            self.__console.info("PurgeFan Fault Classification Model(ResNet-9) is now loaded")
+            self.__model = ResNet(channels=3, n_classes=2)
+            self.__model.load_state_dict(torch.load(self.__model_path.as_posix(), map_location=self.get_device_use()))
+            self.__model.eval() # evaluation mode
+            self.__console.info("PurgeFan Fault Classification(Binary) model is successfully loaded")
         
         else:
             self.__console.critical("PurgeFan Fault Classification Model is not exist")
+            
+    # model file exist check
+    def exist(self):
+        if os.path.isfile(self.__model_path.as_posix()):
+            return True
+        return False
     
     # device to perform        
-    def get_default_device(self):
+    def get_device_use(self):
         if torch.cuda.is_available():
             self.__console.info("CUDA Device is selected")
             return torch.device('cuda')
@@ -112,48 +138,33 @@ class PurgeFanFaultClassification_Resnet:
         else:
             self.__console.info("CPU Device is selected")
             return torch.device('cpu')
-            
-    def to_device(self, data, device):
-        if isinstance(data, (list, tuple)):
-            return [self.to_device(x, device) for x in data]
-        return data.to(device, non_blocking=True)
-            
-    # model inference (True=Fault, False=Normal)
-    def predict(self, image_path:Union[pathlib.Path, str, None]) -> bool:
-        print(image_path)
-        print(self.__model)
-        if self.__model is not None:
-            if image_path == None:
-                self.__console.info("read tmo image")
-            return False
-            #xb = self.to_device(image.unsqueeze(0), self.__device)
-        return False
     
+    # performing the model inference
+    def inference(self, image_path:pathlib.Path) -> str:
+        try:
+            # image preprocessing (changable mean, std responding to dataset)
+            _transformer = transform.Compose([transform.ToTensor(), 
+                                            transform.Normalize(mean=[0.0117, 0.0728, 0.8407], std=[0.9999, 0.9973, 0.5415])])
+            _image = Image.open(image_path)
+            _image = _transformer(_image).unsqueeze(0)
+            
+            with torch.no_grad():
+                result = self.__model(_image)
+                _, preds  = torch.max(result, dim=1) # pick highest class label
+                return self.__classes[preds[0].item()]
+        except Exception as e:
+            self.__console.critical(f"{e}")        
+            return "unknown"
+            
     
-    def predict_image(img, model):
+    def predict_image(self, img, model):
         # Convert to a batch of 1
-        xb = to_device(img.unsqueeze(0), device)
+        xb = self.__to_device(img.unsqueeze(0), self.__device)
         # Get predictions from model
-        model.eval()
+        self.__model.eval()
         with torch.no_grad():
-            yb = model(xb)
+            yb = self.__model(xb)
         # Pick index with highest probability
         _, preds  = torch.max(yb, dim=1)
         # Retrieve the class label
-        return train_ds.classes[preds[0].item()]
-    
-
-# entry point    
-if __name__ ==" __main__":
-    console = ConsoleLogger.get_logger()
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', nargs='?', required=False, help="Dataset Path", default=f"{(ROOT_PATH/'dataset').as_posix()}")
-    parser.add_argument('--epoch', nargs='?', required=False, help="Epoch", default="10")
-    args = parser.parse_args()
-    
-    try:
-        pass
-    
-    except Exception as e:
-        console.critical(f"{e}")
+        return self.__classes[preds[0].item()]

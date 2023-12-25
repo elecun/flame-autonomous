@@ -43,6 +43,11 @@ class AppWindow(QMainWindow):
         self.__frame_win_spectorgram_layout = QVBoxLayout()
         self.__frame_win_spectogram_plot = graph.PlotWidget()
         
+        # model load
+        self.__model = PurgeFanFaultClassification_Resnet("resnet9_pfc.pth")
+        if not self.__model.exist():
+            QMessageBox.critical(self, "Error", f"Model does not exist")
+        
         # local variables
         self.__current_csv_file = None
         
@@ -290,20 +295,30 @@ class AppWindow(QMainWindow):
         _label_result = self.findChild(QLabel, "label_model_result")
         
         if selected_model.lower() == "purgefan fault classification":
-            # model load
-            _model = PurgeFanFaultClassification_Resnet()
-            if _model.predict(image_path=None):
-                # show results
-                _label_result.setStyleSheet("color: red;")
-                _result = "Abnormal\n(Fault)"
-            else:
-                _label_result.setStyleSheet("color: green;")
-                _result = "Normal"
-                
-        elif selected_model.lower() == "fault prediction":
-            _label_result.setStyleSheet("color: yellow;")
-            _result = "Class 1"
-        
+            
+            _target_image = (pathlib.Path(__file__).parent) / "tmp" / "tmp.png"
+            
+            try:
+                if os.path.isfile(_target_image):
+                    result = self.__model.inference(_target_image)
+                    if result.lower() == "fault":
+                        _label_result.setStyleSheet("color: red;")
+                        _result = "Abnormal\n(Fault)"
+                    elif result.lower() == "normal":
+                        _label_result.setStyleSheet("color: green;")
+                        _result = "Normal"
+                    else:
+                        _label_result.setStyleSheet("color: white;")
+                        _result = "Unknown"
+                else:
+                    self.__console.warning("Target Image does not exist.")
+                    _label_result.setStyleSheet("color: red;")
+                    _result = "No Image"
+                    
+            except Exception as e:
+                self.__console.warning(f"{_target_image.as_posix()} does not exist")
+        else:
+            self.__console.critical("Undefined Model")
         
         _label_result.setText(_result)
         
