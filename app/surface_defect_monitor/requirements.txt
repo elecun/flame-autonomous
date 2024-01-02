@@ -1,0 +1,14 @@
+PyQt6
+pandas
+matplotlib
+scipy
+pillow
+twisted
+joblib
+pyqtgraph
+torch
+torchvision
+torchinfo
+tqdm
+opencv-python
+pypylon
