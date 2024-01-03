@@ -68,8 +68,8 @@ class GigE_Basler(ICamera):
                 raw_image = image.GetArray()
                 _grab_result.Release()
                 
-                return raw_image
-        return None
+                return tuple(True, raw_image)
+        return tuple(False, None)
             
     
     # check device open
