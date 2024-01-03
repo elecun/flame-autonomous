@@ -94,8 +94,7 @@ class AppWindow(QMainWindow):
         
         # find GigE Cameras & update camera list
         __cam_found = gige_camera_discovery()
-        
-        __cam_found = [("0", "GigE Cam", "192.168.0.1")] # for est
+        #__cam_found = [("0", "GigE Cam", "192.168.0.1")] # for est
         self.__update_camera_list(__cam_found)
         
     

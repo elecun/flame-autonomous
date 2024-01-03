@@ -20,7 +20,7 @@ from pypylon import pylon
 CAMERA_TICK_TIME = 8 
 
 # global variable for camera array
-_camera_array_container = None
+_camera_array_container:pylon.InstantCameraArray = None
 
 # camera device class
 class GigE_Basler(ICamera):
@@ -28,17 +28,23 @@ class GigE_Basler(ICamera):
         super().__init__(camera_id)
         
         self.camera_id = camera_id  # camera ID
-        self.__grabber = None         # device instance
+        self.__device:pylon.InstantCamera = None        # single camera device instance
         self.__console = ConsoleLogger.get_logger()
+        
+        self.__converter = pylon.ImageFormatConverter()
+        self.__converter.OutputPixelFormat = pylon.PixelType_BGR8packed
+        self.__converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
         
     # open device
     def open(self) -> bool:
         try:
-            
-            # open camera
-            
-            if not self.__grabber.isOpened():
-                    return False
+            self.__device = _camera_array_container[self.camera_id]
+            if not self.__device.IsOpen():
+                self.__device.Open()
+                self.__device.StartGrabbing(pylon.GrabStrategy_LatestImageOnly, pylon.GrabLoop_ProvidedByUser)
+                #self.__device.StartGrabbing(pylon.GrabStrategy_OneByOne, pylon.GrabLoop_ProvidedByUser)
+                #self.__device.StartGrabbing(pylon.GrabStrategy_UpcomingImage, pylon.GrabLoop_ProvidedByUser)
+                #self.__device.StartGrabbing(pylon.GrabStrategy_LatestImages)
             
         except Exception as e:
             self.__console.critical(f"{e}")
@@ -47,18 +53,28 @@ class GigE_Basler(ICamera):
     
     # close camera
     def close(self) -> None:
-        if self.__grabber:
-            self.__grabber.release()
+        if self.__device!=None:
+            self.__device.Close()
+            self.__device.DetachDevice()
             
         return super().close()
     
     # captrue image
     def grab(self):
-        return self.__grabber.read() # grab
+        if self.__device.IsGrabbing():
+            _grab_result = self.__device.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
+            if _grab_result.GrabSucceeded():
+                image = self.__converter.Convert(_grab_result)
+                raw_image = image.GetArray()
+                _grab_result.Release()
+                
+                return raw_image
+        return None
+            
     
     # check device open
     def is_opened(self) -> bool:
-        return self.__grabber.isOpened()
+        return self.__device.IsOpen()
 
     
 # camera controller class
@@ -71,7 +87,6 @@ class Controller(QThread):
         
         self.__console = ConsoleLogger.get_logger()
         self.__camera = GigE_Basler(camera_id)
-        self.__container = None
         
     # getting camera id
     def get_camera_id(self) -> int:
@@ -80,7 +95,10 @@ class Controller(QThread):
     # camera open
     def open(self) -> bool:
         try:
-            return self.__camera.open()
+            if not self.__camera.is_opened():
+                return self.__camera.open()
+            else:
+                self.__console.warning(f"Camera {self.__camera.get_camera_id()} is already opened")
         except Exception as e:
             self.__console.critical(f"{e}")
             
@@ -107,12 +125,14 @@ class Controller(QThread):
     def __str__(self):
         return str(self.__camera.camera_id)
     
+    # return single shot grabbed image
     def grab(self):
         return self.__camera.grab()
     
     # image grab with thread
     def run(self):
         while True:
+            # if interrupt requested
             if self.isInterruptionRequested():
                 break
             
@@ -124,37 +144,7 @@ class Controller(QThread):
                 framerate = float(1./(t_end - t_start).total_seconds())
 
                 self.frame_update_signal.emit(frame, framerate)
-    
-    # find cameraes
-    @staticmethod
-    def discovery():
-        _tlf = pylon.TlFactory.GetInstance()
-        _devices = _tlf.EnumerateDevices()
-        print(f"Found {len(_devices)} Camera(s)")
-        if len(_devices)==0:
-            raise pylon.RuntimeException("No cameras present")
-        
-        # setup camera array
-        Controller.__container = pylon.InstantCameraArray(len(_devices))
-        
-        for idx, camera in enumerate(_camera_container):
-            if not camera.IsPylonDeviceAttached():
-                camera.Attach(_tlf.CreateDevice(_devices[idx]))
-                # camera.Open()
-                print("Found device ", camera.GetDeviceInfo().GetFullName())
-                
-        # select one
-        _camera_container.StartGrabbing(pylon.GrabStrategy_LatestImageOnly, pylon.GrabLoop_ProvidedByUser)
-        #_camera_container.StartGrabbing(pylon.GrabStrategy_OneByOne, pylon.GrabLoop_ProvidedByUser)
-        #_camera_container.StartGrabbing(pylon.GrabStrategy_UpcomingImage, pylon.GrabLoop_ProvidedByUser)
-        #_camera_container.StartGrabbing(pylon.GrabStrategy_LatestImages)
 
-        # convert pylon image to opencv BGR format
-        _converter = pylon.ImageFormatConverter()
-        _converter.OutputPixelFormat = pylon.PixelType_BGR8packed
-        _converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
-        
-        return len(_devices) 
         
 '''
 Camera Finder to discover GigE Cameras
@@ -177,8 +167,10 @@ def gige_camera_discovery() -> list:
         if len(_devices)==0:
             raise pylon.RuntimeException("No cameras present")
         
+        # create camera array container
         _camera_array_container = pylon.InstantCameraArray(len(_devices))
         
+        # attach the found camera into the container
         for idx, camera in enumerate(_camera_array_container):
             if not camera.IsPylonDeviceAttached():
                 _cam_array.append(tuple(idx, camera.GetFullName(), camera.GetIpAddress()))
