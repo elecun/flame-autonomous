@@ -5,10 +5,19 @@ Time-series Data Analyzer Application Window Class
 
 import sys, os
 import pathlib
-from PyQt6.QtGui import QImage, QPixmap, QCloseEvent, QStandardItemModel, QStandardItem
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QFileDialog, QFrame, QVBoxLayout, QComboBox, QLineEdit, QCheckBox
-from PyQt6.uic import loadUi
-from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+try:
+    # using PyQt5
+    from PyQt5.QtGui import QImage, QPixmap, QCloseEvent, QStandardItemModel, QStandardItem
+    from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QFileDialog, QFrame, QVBoxLayout, QComboBox, QLineEdit, QCheckBox
+    from PyQt5.uic import loadUi
+    from PyQt5.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+except ImportError:
+    # using PyQt6
+    from PyQt6.QtGui import QImage, QPixmap, QCloseEvent, QStandardItemModel, QStandardItem
+    from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QFileDialog, QFrame, QVBoxLayout, QComboBox, QLineEdit, QCheckBox
+    from PyQt6.uic import loadUi
+    from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+    
 from datetime import datetime
 import pandas as pd
 import numpy as np

@@ -6,12 +6,19 @@ Steel Surface Defect Detectpr Application Window class
 import os, sys
 import cv2
 import pathlib
-import paho.mqtt.client as mqtt
-from PyQt6.QtGui import QImage, QPixmap, QCloseEvent, QStandardItem, QStandardItemModel
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog
-from PyQt6.uic import loadUi
-from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
-import json
+try:
+    # using PyQt5
+    from PyQt5.QtGui import QImage, QPixmap, QCloseEvent, QStandardItem, QStandardItemModel
+    from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog
+    from PyQt5.uic import loadUi
+    from PyQt5.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+except ImportError:
+    # using PyQt6
+    from PyQt6.QtGui import QImage, QPixmap, QCloseEvent, QStandardItem, QStandardItemModel
+    from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog
+    from PyQt6.uic import loadUi
+    from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+    
 import numpy as np
 from datetime import datetime
 from pypylon import genicam
@@ -24,9 +31,6 @@ from util.monitor.system import SystemStatusMonitor
 from util.monitor.gpu import GPUStatusMonitor
 from util.logger.console import ConsoleLogger
 from vision.SDD.ResNet import ResNet9 as SDDModel
-
-# GUI Component name
-FRAME_WINDOW_NAME = "window_camera"
 
 '''
 Main window
@@ -64,8 +68,12 @@ class AppWindow(QMainWindow):
                 self.__table_camlist_model.setHorizontalHeaderLabels(_talbe_camera_columns)
                 self.table_camera_list.setModel(self.__table_camlist_model)
                 self.table_camera_list.resizeColumnsToContents()
+                
+                # frame window mapping
+                self.__frame_window_map = {}
+                for idx, id in enumerate(config["camera_id"]):
+                    self.__frame_window_map[id] = config["camera_window"][idx]
 
-                    
                 # apply monitoring
                 self.__sys_monitor = SystemStatusMonitor(interval_ms=1000)
                 self.__sys_monitor.usage_update_signal.connect(self.update_system_status)
@@ -87,14 +95,16 @@ class AppWindow(QMainWindow):
         
         # member variables
         self.__configure = config   # configure parameters
-        self.__sdd_container = {}   # SDD classification container
+        self.__sdd_model_container = {}   # SDD classification model container
+        self.__camera_container = {}
+        self.__recorder_container = {}
         
         self.__camera:GigECameraController = None # camera device controller
         self.__recorder:VideoRecorder = None # video recorder
         
         # find GigE Cameras & update camera list
         __cam_found = gige_camera_discovery()
-        #__cam_found = [("0", "GigE Cam", "192.168.0.1")] # for est
+        #__cam_found = [("0", "GigE Cam", "192.168.0.1")] # for test
         self.__update_camera_list(__cam_found)
         
     
@@ -102,6 +112,9 @@ class AppWindow(QMainWindow):
     Private Member functions
     '''    
     def __update_camera_list(self, cameras:list):
+        label_n_cam = self.findChild(QLabel, "label_num_camera")
+        label_n_cam.setText(str(len(cameras)))
+        
         # clear tableview
         self.__table_camlist_model.setRowCount(0)
         
@@ -115,6 +128,21 @@ class AppWindow(QMainWindow):
     '''
     # selected camera to open
     def on_select_camera_open(self):
+        # open camera array
+        if len(self.__camera_container)>0:
+            QMessageBox.warning(self, "Warning", "All camera is already working..")
+            return
+        
+        # create camera instance
+        for id in self.__configure["camera_id"]:
+            camera = GigECameraController(id)
+            if camera.open():
+                self.__camera_container[id] = camera
+                self.__camera_container[id].frame_update_signal.connect(self.show_updated_frame) # connect to frame grab signal
+                
+                resol = self.__camera_container[id].get_pixel_resolution()
+        
+        # previous
         row = self.table_camera_list.currentIndex().row()
         col = self.table_camera_list.currentIndex().column()
         self.__console.info(f"selected {row}, {col}")

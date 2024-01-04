@@ -75,7 +75,6 @@ class GigE_Basler(ICamera):
     # check device open
     def is_opened(self) -> bool:
         return self.__device.IsOpen()
-
     
 # camera controller class
 class Controller(QThread):
@@ -101,7 +100,6 @@ class Controller(QThread):
                 self.__console.warning(f"Camera {self.__camera.get_camera_id()} is already opened")
         except Exception as e:
             self.__console.critical(f"{e}")
-            
         return False
     
     # camera close
@@ -147,11 +145,11 @@ class Controller(QThread):
 
         
 '''
-Camera Finder to discover GigE Cameras
+Camera Finder to discover GigE Cameras (Basler)
 '''   
 def gige_camera_discovery() -> list:
     
-    _cam_array = []
+    _caminfo_array:list = []
     
     # reset camera array
     global _camera_array_container
@@ -160,25 +158,28 @@ def gige_camera_discovery() -> list:
         _camera_array_container.Close()
     
     try:
-        # find camera
+        # get the transport layer factory
         _tlf = pylon.TlFactory.GetInstance()
+        
+        # get all attached devices
         _devices = _tlf.EnumerateDevices()
         
         if len(_devices)==0:
-            raise pylon.RuntimeException("No cameras present")
+            raise Exception(f"No camera present")
         
         # create camera array container
         _camera_array_container = pylon.InstantCameraArray(len(_devices))
+        l = _camera_array_container.GetSize()
         
-        # attach the found camera into the container
-        for idx, camera in enumerate(_camera_array_container):
-            if not camera.IsPylonDeviceAttached():
-                _cam_array.append(tuple(idx, camera.GetFullName(), camera.GetIpAddress()))
-                camera.Attach(_tlf.CreateDevice(_devices[idx]))
+        # create and attach all device
+        for idx, cam in enumerate(_camera_array_container):
+            cam.Attach(_tlf.CreateDevice(_devices[idx]))
+            print(f"Using device {cam.GetDeviceInfo().GetModelName()}")
+            _caminfo_array.append(tuple(idx, cam.GetFullName(), cam.GetIpAddress()))
         
     except Exception as e:
         print(f"{e}")
         
-    return _cam_array
+    return _caminfo_array
     
         

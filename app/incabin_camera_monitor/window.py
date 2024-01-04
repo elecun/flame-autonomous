@@ -6,11 +6,20 @@ Incabin Cmaera Monitor Application Window class
 import os, sys
 import cv2
 import pathlib
-import paho.mqtt.client as mqtt
-from PyQt6.QtGui import QImage, QPixmap, QCloseEvent
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog
-from PyQt6.uic import loadUi
-from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+
+try:
+    # using PyQt5
+    from PyQt5.QtGui import QImage, QPixmap, QCloseEvent
+    from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog
+    from PyQt5.uic import loadUi
+    from PyQt5.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+except ImportError:
+    # using PyQt6
+    from PyQt6.QtGui import QImage, QPixmap, QCloseEvent
+    from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog
+    from PyQt6.uic import loadUi
+    from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+    
 import json
 import numpy as np
 from datetime import datetime
