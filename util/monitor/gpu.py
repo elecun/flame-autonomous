@@ -39,21 +39,24 @@ class GPUStatusMonitor(QThread):
     # loop function
     def run(self):
         while True:
-            if self.is_available==False:
-                self.console.warning("Warning : GPU Status Monitor is not available")
-                break
-            
-            if self.isInterruptionRequested():
-                break
-            
-            for id, handle in enumerate(self.gpu_handle):
-                info = pynvml.nvmlDeviceGetUtilizationRates(handle)
-                self.usage[f"gpu_{id}"] = int(info.gpu)
-                self.usage[f"memory_{id}"] = int(info.memory)
+            try:
+                if self.is_available==False:
+                    self.console.warning("Warning : GPU Status Monitor is not available")
+                    break
                 
-            self.usage_update_signal.emit(self.usage)
-            
-            QThread.msleep(self.interval)
+                if self.isInterruptionRequested():
+                    break
+                
+                for id, handle in enumerate(self.gpu_handle):
+                    info = pynvml.nvmlDeviceGetUtilizationRates(handle)
+                    self.usage[f"gpu_{id}"] = int(info.gpu)
+                    self.usage[f"memory_{id}"] = int(info.memory)
+                    
+                self.usage_update_signal.emit(self.usage)
+                
+                QThread.msleep(self.interval)
+            except pynvml.nvml.NVML_ERROR_NOT_SUPPORTED:
+                self.console.warning(f"This device does not s")
     
     # close thread        
     def close(self) -> None:

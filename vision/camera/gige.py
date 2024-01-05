@@ -181,7 +181,7 @@ def gige_camera_discovery() -> list:
         for idx, cam in enumerate(_camera_array_container):
             cam.Attach(_tlf.CreateDevice(_devices[idx]))
             print(f"Using device {cam.GetDeviceInfo().GetModelName()}")
-            _caminfo_array.append(tuple(idx, cam.GetFullName(), cam.GetIpAddress()))
+            _caminfo_array.append(tuple(idx, cam.GetDeviceInfo().GetModelName(), cam.GetDeviceInfo().GetIpAddress()))
         
     except Exception as e:
         print(f"{e}")
