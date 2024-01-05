@@ -3,8 +3,14 @@ Gigabit Ethernet interface camera device class
 @Author <bh.hwang@iae.re.kr>
 '''
 
-from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
-from PyQt6.QtGui import QImage
+try:
+    from PyQt5.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+    from PyQt5.QtGui import QImage
+except ImportError:
+    from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+    from PyQt6.QtGui import QImage
+    
+    
 import cv2
 from datetime import datetime
 from util.logger.video import VideoRecorder

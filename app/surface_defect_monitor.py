@@ -8,11 +8,9 @@ import pathlib
 import json
 
 try:
-    # using pyqt6
-    from PyQt6.QtWidgets import QApplication
-except ImportError:
-    # using pyqt5
     from PyQt5.QtWidgets import QApplication
+except ImportError:
+    from PyQt6.QtWidgets import QApplication
 
 import argparse
 
