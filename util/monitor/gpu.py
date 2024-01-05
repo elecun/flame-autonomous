@@ -5,7 +5,10 @@ GPU Monitoring Class
 
 
 import pynvml
-from PyQt6.QtCore import QThread, pyqtSignal
+try:
+    from PyQt6.QtCore import QThread, pyqtSignal
+except ImportError:
+    from PyQt5.QtCore import QThread, pyqtSignal
 from util.logger.console import ConsoleLogger
 
 

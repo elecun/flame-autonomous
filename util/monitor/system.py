@@ -5,7 +5,10 @@ System Usage Monitoring
 
 
 import psutil
-from PyQt6.QtCore import QObject, QThread, pyqtSignal
+try:
+    from PyQt6.QtCore import QObject, QThread, pyqtSignal
+except ImportError:
+    from PyQt5.QtCore import QObject, QThread, pyqtSignal
 import time
 
 

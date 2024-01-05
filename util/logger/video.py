@@ -4,8 +4,13 @@ Video Recorder Class
 '''
 
 import cv2
-from PyQt6.QtCore import QObject, pyqtSignal
-from PyQt6.QtGui import QImage
+try:
+    from PyQt6.QtCore import QObject, pyqtSignal
+    from PyQt6.QtGui import QImage
+except ImportError:
+    from PyQt5.QtCore import QObject, pyqtSignal
+    from PyQt5.QtGui import QImage
+    
 import pathlib
 from abc import *
 from util.logger.console import ConsoleLogger
