@@ -4,16 +4,17 @@ Surface Defect Detector with Qt GUI
 '''
 
 import sys, os
-from PyQt6 import QtGui
 import pathlib
 import json
-from PyQt6.QtGui import QImage, QPixmap, QCloseEvent
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox
-from PyQt6.uic import loadUi
-from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
-from datetime import datetime
+
+try:
+    # using pyqt6
+    from PyQt6.QtWidgets import QApplication
+except ImportError:
+    # using pyqt5
+    from PyQt5.QtWidgets import QApplication
+
 import argparse
-import time
 
 # root directory registration on system environment
 ROOT_PATH = pathlib.Path(__file__).parent.parent
