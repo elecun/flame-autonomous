@@ -56,7 +56,8 @@ if __name__ == "__main__":
             
             if "app_window_title" in configure:
                 app_window.setWindowTitle(configure["app_window_title"])
-            app_window.show()
+            #app_window.show()
+            app_window.showNormal()
             sys.exit(app.exec())
 
     except json.JSONDecodeError as e:
