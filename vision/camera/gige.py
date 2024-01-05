@@ -44,7 +44,9 @@ class GigE_Basler(ICamera):
     # open device
     def open(self) -> bool:
         try:
+            print(len(_camera_array_container))
             self.__device = _camera_array_container[self.camera_id]
+            
             if not self.__device.IsOpen():
                 self.__device.Open()
                 self.__device.StartGrabbing(pylon.GrabStrategy_LatestImageOnly, pylon.GrabLoop_ProvidedByUser)
