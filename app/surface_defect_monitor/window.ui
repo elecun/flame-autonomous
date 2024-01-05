@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1520</width>
-    <height>1184</height>
+    <height>845</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -226,7 +226,7 @@
      <rect>
       <x>780</x>
       <y>510</y>
-      <width>271</width>
+      <width>401</width>
       <height>271</height>
      </rect>
     </property>
@@ -236,7 +236,7 @@
     <widget class="QPushButton" name="btn_camera_discovery">
      <property name="geometry">
       <rect>
-       <x>160</x>
+       <x>290</x>
        <y>230</y>
        <width>100</width>
        <height>32</height>
@@ -254,7 +254,7 @@
       <rect>
        <x>5</x>
        <y>23</y>
-       <width>261</width>
+       <width>391</width>
        <height>201</height>
       </rect>
      </property>
