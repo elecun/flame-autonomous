@@ -409,9 +409,9 @@ border: 1px solid white;</string>
     <widget class="QLabel" name="label_num_camera">
      <property name="geometry">
       <rect>
-       <x>110</x>
+       <x>120</x>
        <y>31</y>
-       <width>58</width>
+       <width>31</width>
        <height>16</height>
       </rect>
      </property>
