@@ -104,8 +104,6 @@ class AppWindow(QMainWindow):
         
         # find GigE Cameras & update camera list
         __cam_found = gige_camera_discovery()
-        print(__cam_found)
-        #__cam_found = [("0", "GigE Cam", "192.168.0.1")] # for test
         self.__update_camera_list(__cam_found)
         
     
@@ -141,7 +139,7 @@ class AppWindow(QMainWindow):
                 self.__camera_container[id] = camera
                 self.__camera_container[id].frame_update_signal.connect(self.show_updated_frame) # connect to frame grab signal
                 
-                resol = self.__camera_container[id].get_pixel_resolution()
+                #resol = self.__camera_container[id].get_pixel_resolution()
         
         # previous
         row = self.table_camera_list.currentIndex().row()

@@ -77,7 +77,6 @@ class GigE_Basler(ICamera):
                 return tuple(True, raw_image)
         return tuple(False, None)
             
-    
     # check device open
     def is_opened(self) -> bool:
         return self.__device.IsOpen()
