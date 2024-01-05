@@ -5,7 +5,10 @@ Defect Classification Mdoel with Residual Network
 
 import pathlib
 import numpy as np
-from PyQt6.QtCore import QObject, pyqtSignal
+try:
+    from PyQt6.QtCore import QObject, pyqtSignal
+except ImportError:
+    from PyQt5.QtCore import QObject, pyqtSignal
 import cv2
 
 from util.logger.console import ConsoleLogger
