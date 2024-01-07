@@ -61,6 +61,7 @@ class GPUStatusMonitor(QThread):
                 QThread.msleep(self.interval)
             except pynvml.nvml.NVMLError:
                 self.console.warning(f"This device does not support pynvml for status monitoring")
+                break # break threading
     
     # close thread        
     def close(self) -> None:
