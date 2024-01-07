@@ -33,15 +33,16 @@ class GPUStatusMonitor(QThread):
                 self.gpu_handle.append(pynvml.nvmlDeviceGetHandleByIndex(gpu_id))
             
             self.is_available = True
-        except pynvml.NVMLError as e:
-            self.console.warning(f"{e}")
+        except pynvml.nvml.NVML_ERROR_NOT_SUPPORTED:
+            self.console.warning(f"pynvml does not support for this device")
+            self.is_available = False
     
     # loop function
     def run(self):
         while True:
             try:
                 if self.is_available==False:
-                    self.console.warning("Warning : GPU Status Monitor is not available")
+                    self.console.warning("Warning : GPU Status Monitor id not able to perform for this device")
                     break
                 
                 if self.isInterruptionRequested():
