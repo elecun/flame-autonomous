@@ -106,6 +106,9 @@ class AppWindow(QMainWindow):
         __cam_found = gige_camera_discovery()
         self.__update_camera_list(__cam_found)
         
+        # camera open
+        self.on_select_camera_open()
+        
     
     '''
     Private Member functions
@@ -138,6 +141,7 @@ class AppWindow(QMainWindow):
             if camera.open():
                 self.__camera_container[id] = camera
                 self.__camera_container[id].frame_update_signal.connect(self.show_updated_frame) # connect to frame grab signal
+                self.__camera_container[id].begin()
                 
                 #resol = self.__camera_container[id].get_pixel_resolution()
         
