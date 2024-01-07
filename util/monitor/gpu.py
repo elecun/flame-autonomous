@@ -33,7 +33,7 @@ class GPUStatusMonitor(QThread):
                 self.gpu_handle.append(pynvml.nvmlDeviceGetHandleByIndex(gpu_id))
             
             self.is_available = True
-        except pynvml.nvml.NVML_ERROR_NOT_SUPPORTED:
+        except pynvml.nvml.NVMLError:
             self.console.warning(f"pynvml does not support for this device")
             self.is_available = False
     
