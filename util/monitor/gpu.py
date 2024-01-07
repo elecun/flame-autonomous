@@ -52,7 +52,11 @@ class GPUStatusMonitor(QThread):
                     break
                 
                 for id, handle in enumerate(self.gpu_handle):
-                    info = pynvml.nvmlDeviceGetUtilizationRates(handle)
+                    try:
+                        info = pynvml.nvmlDeviceGetUtilizationRates(handle)
+                    except pynvml.nvml.NVMLError:
+                        print("exception")
+                        
                     self.usage[f"gpu_{id}"] = int(info.gpu)
                     self.usage[f"memory_{id}"] = int(info.memory)
                     
