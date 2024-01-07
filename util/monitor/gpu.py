@@ -52,19 +52,15 @@ class GPUStatusMonitor(QThread):
                     break
                 
                 for id, handle in enumerate(self.gpu_handle):
-                    try:
-                        info = pynvml.nvmlDeviceGetUtilizationRates(handle)
-                    except pynvml.nvml.NVMLError:
-                        print("exception")
-                        
+                    info = pynvml.nvmlDeviceGetUtilizationRates(handle)    
                     self.usage[f"gpu_{id}"] = int(info.gpu)
                     self.usage[f"memory_{id}"] = int(info.memory)
                     
                 self.usage_update_signal.emit(self.usage)
                 
                 QThread.msleep(self.interval)
-            except pynvml.nvml.NVML_ERROR_NOT_SUPPORTED:
-                self.console.warning(f"This device does not support")
+            except pynvml.nvml.NVMLError:
+                self.console.warning(f"This device does not support pynvml for status monitoring")
     
     # close thread        
     def close(self) -> None:
