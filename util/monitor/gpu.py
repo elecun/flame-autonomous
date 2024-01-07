@@ -19,8 +19,6 @@ class GPUStatusMonitor(QThread):
     def __init__(self, interval_ms:int=1000):
         super().__init__()
         
-        print("init gpu status monitor")
-        
         self.console = ConsoleLogger.get_logger()
         
         self.interval = interval_ms
@@ -29,7 +27,6 @@ class GPUStatusMonitor(QThread):
         self.is_available = False
         
         try:
-            print("initialize pynvml")
             pynvml.nvmlInit()
             self.usage["gpu_count"] = pynvml.nvmlDeviceGetCount()
             for gpu_id in range(self.usage["gpu_count"]):
@@ -60,7 +57,7 @@ class GPUStatusMonitor(QThread):
                 
                 QThread.msleep(self.interval)
             except pynvml.nvml.NVMLError:
-                self.console.warning(f"This device does not support pynvml for status monitoring")
+                self.console.warning(f"This device does not support pynvml for GPU status monitoring")
                 break # break threading
     
     # close thread        
