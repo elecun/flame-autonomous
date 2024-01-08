@@ -242,8 +242,7 @@ class AppWindow(QMainWindow):
         if self.__recorder!=None:
             self.__recorder.stop()
         
-        
-        for camera in self.__camera_container:
+        for camera in self.__camera_container.values():
             camera.close()
             
         
