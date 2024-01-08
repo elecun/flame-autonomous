@@ -82,7 +82,9 @@ class GigE_Basler(ICamera):
             
     # check device open
     def is_opened(self) -> bool:
-        return self.__device.IsOpen()
+        if self.__device:
+            return self.__device.IsOpen()
+        return False
     
 # camera controller class
 class Controller(QThread):
