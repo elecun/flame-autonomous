@@ -403,7 +403,7 @@ border: 1px solid white;</string>
       </rect>
      </property>
      <property name="text">
-      <string>Camera Found :</string>
+      <string>Camera found : </string>
      </property>
     </widget>
     <widget class="QLabel" name="label_num_camera">
