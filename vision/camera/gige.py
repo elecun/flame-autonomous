@@ -45,7 +45,7 @@ class GigE_Basler(ICamera):
     def open(self) -> bool:
         try:
             global _camera_array_container
-            print("# camera", len(_camera_array_container))
+            print(f"Number of cameras : {_camera_array_container.GetSize()}")
             self.__device = _camera_array_container[self.camera_id]
             
             if not self.__device.IsOpen():
