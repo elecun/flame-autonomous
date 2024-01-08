@@ -144,7 +144,7 @@ class AppWindow(QMainWindow):
             
                 #resol = self.__camera_container[id].get_pixel_resolution()
             else:
-                QMessageBox.warning(self, "Camera connection fail", f"Failed to connect to camera {camera.uvc_camera.get_camera_id()}")
+                QMessageBox.warning(self, "Camera connection fail", f"Failed to connect to camera {camera.get_camera_id()}")
                 
         
         # previous
