@@ -140,13 +140,17 @@ class AppWindow(QMainWindow):
                 self.__camera_container[id] = camera
                 self.__camera_container[id].frame_update_signal.connect(self.show_updated_frame) # connect to frame grab signal
                 self.__camera_container[id].begin()
-                
+                self.__console.info(f"Camera {camera.get_camera_id()} is not starting..")
+            
                 #resol = self.__camera_container[id].get_pixel_resolution()
+            else:
+                QMessageBox.warning(self, "Camera connection fail", f"Failed to connect to camera {camera.uvc_camera.get_camera_id()}")
+                
         
         # previous
-        row = self.table_camera_list.currentIndex().row()
-        col = self.table_camera_list.currentIndex().column()
-        self.__console.info(f"selected {row}, {col}")
+        # row = self.table_camera_list.currentIndex().row()
+        # col = self.table_camera_list.currentIndex().column()
+        # self.__console.info(f"selected {row}, {col}")
     
     # re-discover all gige network camera
     def on_select_camera_discovery(self):
@@ -225,7 +229,7 @@ class AppWindow(QMainWindow):
 
         # draw on window
         try:
-            window = self.findChild(QLabel, FRAME_WINDOW_NAME)
+            window = self.findChild(QLabel, self.__frame_window_map[id])
             window.setPixmap(pixmap.scaled(window.size(), Qt.AspectRatioMode.KeepAspectRatio))
         except Exception as e:
             self.__console.critical(f"{e}")
