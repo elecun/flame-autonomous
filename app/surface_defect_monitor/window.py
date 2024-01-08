@@ -241,9 +241,11 @@ class AppWindow(QMainWindow):
         # if recording.. stop working
         if self.__recorder!=None:
             self.__recorder.stop()
+        
+        
+        for camera in self.__camera_container:
+            camera.close()
             
-        if self.__camera!=None:
-            self.__camera.close()
         
         # close monitoring thread
         try:

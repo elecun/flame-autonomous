@@ -45,7 +45,6 @@ class GigE_Basler(ICamera):
     def open(self) -> bool:
         try:
             global _camera_array_container
-            print(f"Number of cameras : {_camera_array_container.GetSize()}")
             self.__device = _camera_array_container[self.camera_id]
             
             if not self.__device.IsOpen():
@@ -194,4 +193,11 @@ def gige_camera_discovery() -> list:
         
     return _caminfo_array
     
-        
+'''
+Camera container termination
+'''
+def gige_camera_destroy():
+    global _camera_array_container
+    if _camera_array_container:
+        _camera_array_container.StopGrabbing()
+        _camera_array_container.Close()
