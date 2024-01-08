@@ -106,10 +106,7 @@ class AppWindow(QMainWindow):
         __cam_found = gige_camera_discovery()
         self.__update_camera_list(__cam_found)
         
-        # camera open
-        self.on_select_camera_open()
-        
-    
+
     '''
     Private Member functions
     '''    
@@ -139,6 +136,7 @@ class AppWindow(QMainWindow):
         for id in self.__configure["camera_id"]:
             camera = GigECameraController(id)
             if camera.open():
+                print(f"{camera.get_camera_id()} is successfully connected")
                 self.__camera_container[id] = camera
                 self.__camera_container[id].frame_update_signal.connect(self.show_updated_frame) # connect to frame grab signal
                 self.__camera_container[id].begin()
