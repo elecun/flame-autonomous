@@ -9,20 +9,18 @@ import pathlib
 try:
     # using PyQt5
     from PyQt5.QtGui import QImage, QPixmap, QCloseEvent, QStandardItem, QStandardItemModel
-    from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog
+    from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog, QComboBox
     from PyQt5.uic import loadUi
     from PyQt5.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 except ImportError:
     # using PyQt6
     from PyQt6.QtGui import QImage, QPixmap, QCloseEvent, QStandardItem, QStandardItemModel
-    from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog
+    from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog, QComboBox
     from PyQt6.uic import loadUi
     from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
     
 import numpy as np
 from datetime import datetime
-from pypylon import genicam
-from pypylon import pylon
 
 from vision.camera.gige import Controller as GigECameraController
 from vision.camera.gige import gige_camera_discovery
@@ -60,6 +58,11 @@ class AppWindow(QMainWindow):
                 # GUI component event callback function connection
                 self.btn_camera_discovery.clicked.connect(self.on_click_camera_discovery)
                 self.table_camera_list.doubleClicked.connect(self.on_dbclick_camera_list)
+                self.btn_inference.clicked.connect(self.on_click_inference)
+                
+                self.__model_selection = self.findChild(QComboBox, name="cmbbox_inference_model")
+                self.__model_selection.currentIndexChanged.connect(self.on_changed_model_selection_index)
+                self.__model_selection.addItems(["luxteel defect binary class"])
                 
                 # define camera list table model
                 _talbe_camera_columns = ["ID", "Camera Name", "Address"]
@@ -152,6 +155,12 @@ class AppWindow(QMainWindow):
         # col = self.table_camera_list.currentIndex().column()
         # self.__console.info(f"selected {row}, {col}")
     
+    # click event callback function
+    def on_click_inference(self):
+        selected_model = self.__model_selection.currentText()
+        _label_result = self.findChild(QLabel, "label_inference_result")
+        
+    
     # re-discover all gige network camera
     def on_select_camera_discovery(self):
         __cam_found = gige_camera_discovery()
@@ -167,6 +176,14 @@ class AppWindow(QMainWindow):
     # start image capture
     def on_select_capture_image(self):
         pass
+    
+    # model selection
+    def on_changed_model_selection_index(self, index):
+        try:
+            model = self.__model_selection.currentText()
+            self.__console.info(f"Selected Model : {model}")
+        except Exception as e:
+            self.__console.critical(f"{e}")
     
     # re-discover cameras
     def on_click_camera_discovery(self):
@@ -275,101 +292,4 @@ class AppWindow(QMainWindow):
                 gpu_usage_window.setValue(int(status["gpu_0"]))
                 gpu_mem_usage_window.setValue(int(status["memory_0"]))
         
-            
-   
         
-        
-        
-        
-        
-        
-        
-
-    # menu event callback : all camera connection
-    def on_select_connect_all(self):
-
-        
-        # create camera instance
-        for id in self.__configure["camera_id"]:
-            camera = GigECameraController(id)
-            if camera.open():
-                self.__camera_container[id] = camera
-                self.__camera_container[id].frame_update_signal.connect(self.show_updated_frame)    # connect to frame grab signal callback function
-                
-                resol = self.__camera_container[id].get_pixel_resolution()
-                # create video recorder
-                self.__recorder_container[id] = VideoRecorder(dirpath=(self.__configure["app_path"] / self.__configure["video_out_path"]), 
-                                                              filename=f"camera_{id}",
-                                                              ext=self.__configure["video_extension"],
-                                                              resolution=(int(self.__configure["camera_width"]), int(self.__configure["camera_height"])),
-                                                              fps=float(self.__configure["camera_fps"]))
-                self.__camera_container[id].frame_update_signal.connect(self.__recorder_container[id].write_frame)
-                
-                # create SDD estimator
-                self.__sdd_container[id] = SDDModel(modelname=self.__configure["hpe_model"], id=id)
-                self.__camera_container[id].frame_update_signal.connect(self.__hpe_container[id].predict)
-                # self.__hpe_container[id].estimated_result_image.connect(self.show_estimated_frame) # draw key points
-                
-                # start grab thread
-                self.__camera_container[id].begin()
-            else:
-                QMessageBox.warning(self, "Camera connection fail", f"Failed to connect to camera {camera.uvc_camera.get_camera_id()}")
-
-    
-            
-     
-
-    # camera discovery
-    # def on_click_camera_discovery(self):
-    #     try:
-    #         _tlf = pylon.TlFactory.GetInstance()
-    #         _devices = _tlf.EnumerateDevices()
-    #         print(f"Found {len(_devices)} Camera(s)")
-            
-    #         if len(_devices)==0:
-    #             raise pylon.RuntimeException("No cameras present")
-            
-    #         # setup camera array
-    #         _camera_container = pylon.InstantCameraArray(len(_devices))
-            
-    #     except Exception as e:
-    #         self.__console.warning(f"{len(_devices)} camera found")
-    #         QMessageBox.warning(self, f"{e}")
-
-
-
-
-    
-    # internal api for starting record
-    def _api_record_start(self):
-        for camera in self.opened_camera.values():
-            print(f"Recording start...({camera.camera_id})")
-            camera.start_recording()
-        self.show_on_statusbar("Start Recording...")
-    
-    # internal api for stopping record
-    def _api_record_stop(self):
-        for camera in self.opened_camera.values():
-            print(f"Recording stop...({camera.camera_id})")
-            camera.stop_recording()
-        self.show_on_statusbar("Stopped Recording...")
-        
-    # capture image
-    def _api_capture_image(self, delay_s:int):
-        for camera in self.opened_camera.values():
-            camera.start_capturing(delay_s)
-        self.show_on_statusbar(f"Captured image after {delay_s} second(s)")
-
-
-
-    # update image frame on label area
-    def update_frame(self, image):
-        id = self.sender().camera_id
-        pixmap = QPixmap.fromImage(image)
-        #window = self.findChild(QLabel, camera_windows[id])
-        try:
-            window = self.findChild(QLabel, self.configure_param["camera_windows_map"][id])
-            window.setPixmap(pixmap.scaled(window.size(), Qt.AspectRatioMode.KeepAspectRatio))
-        except Exception as e:
-            self.__console.warning(f"{e}")
-    
