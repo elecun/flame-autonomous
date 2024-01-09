@@ -62,7 +62,7 @@ class AppWindow(QMainWindow):
                 
                 self.__model_selection = self.findChild(QComboBox, name="cmbbox_inference_model")
                 self.__model_selection.currentIndexChanged.connect(self.on_changed_model_selection_index)
-                self.__model_selection.addItems(["luxteel defect binary class"])
+                self.__model_selection.addItems(["luxteel defect binary class", "luxteel defect multi class"])
                 
                 # define camera list table model
                 _talbe_camera_columns = ["ID", "Camera Name", "Address"]
