@@ -12,3 +12,4 @@ torchinfo
 tqdm
 opencv-python
 pypylon
+ttach
