@@ -12,3 +12,6 @@ torch
 torchvision
 torchinfo
 tqdm
+paho-mqtt
+opencv-python
+cololog

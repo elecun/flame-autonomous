@@ -19,6 +19,7 @@ except ImportError:
     from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog
     from PyQt6.uic import loadUi
     from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+    from PyQt6.QtQuick import Timeline
     
 import json
 import numpy as np
