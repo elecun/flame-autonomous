@@ -13,3 +13,4 @@ tqdm
 opencv-python
 pypylon
 ttach
+colorlogs
