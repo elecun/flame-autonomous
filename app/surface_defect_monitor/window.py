@@ -22,8 +22,8 @@ except ImportError:
 import numpy as np
 from datetime import datetime
 
-from vision.camera.gige import Controller as GigECameraController
-from vision.camera.gige import gige_camera_discovery
+from vision.camera.multi_gige import Controller as GigEMultiCameraController
+from vision.camera.multi_gige import gige_camera_discovery
 from util.logger.video import VideoRecorder
 from util.monitor.system import SystemStatusMonitor
 from util.monitor.gpu import GPUStatusMonitor
@@ -77,7 +77,9 @@ class AppWindow(QMainWindow):
                 for idx, id in enumerate(config["camera_id"]):
                     self.__frame_window_map[id] = config["camera_window"][idx]
 
+                
                 # apply monitoring
+                '''
                 self.__sys_monitor = SystemStatusMonitor(interval_ms=1000)
                 self.__sys_monitor.usage_update_signal.connect(self.update_system_status)
                 self.__sys_monitor.start()
@@ -90,6 +92,8 @@ class AppWindow(QMainWindow):
                 except Exception as e:
                     self.__console.critical("GPU may not be available")
                     pass
+                '''
+                
             else:
                 raise Exception("GUI definition must be contained in the configuration file.")
 
@@ -102,7 +106,7 @@ class AppWindow(QMainWindow):
         self.__camera_container = {}
         self.__recorder_container = {}
         
-        self.__camera:GigECameraController = None # camera device controller
+        #self.__camera:GigEMultiCameraController = None # camera device controller
         self.__recorder:VideoRecorder = None # video recorder
         
         # find GigE Cameras & update camera list
@@ -130,30 +134,11 @@ class AppWindow(QMainWindow):
     '''
     # selected camera to open
     def on_select_camera_open(self):
-        # open camera array
-        if len(self.__camera_container)>0:
-            QMessageBox.warning(self, "Warning", "All camera is already working..")
-            return
         
         # create camera instance
-        for id in self.__configure["camera_id"]:
-            camera = GigECameraController(id)
-            if camera.open():
-                print(f"{camera.get_camera_id()} is successfully connected")
-                self.__camera_container[id] = camera
-                self.__camera_container[id].frame_update_signal.connect(self.show_updated_frame) # connect to frame grab signal
-                self.__camera_container[id].begin()
-                self.__console.info(f"Camera {camera.get_camera_id()} is not starting..")
-            
-                #resol = self.__camera_container[id].get_pixel_resolution()
-            else:
-                QMessageBox.warning(self, "Camera connection fail", f"Failed to connect to camera {camera.get_camera_id()}")
-                
-        
-        # previous
-        # row = self.table_camera_list.currentIndex().row()
-        # col = self.table_camera_list.currentIndex().column()
-        # self.__console.info(f"selected {row}, {col}")
+        self.cameras = GigEMultiCameraController()
+        self.cameras.frame_update_signal.connect(self.show_updated_frame) # connect to frame grab signal
+        self.cameras.begin_thread()
     
     # click event callback function
     def on_click_inference(self):
@@ -209,7 +194,7 @@ class AppWindow(QMainWindow):
             self.__camera.close()
         
         # set camera controller with id
-        self.__camera = GigECameraController(id)
+        self.__camera = GigEMultiCameraController(id)
         if self.__camera.open():
             self.__camera.frame_update_signal.connect(self.show_updated_frame)
             self.__camera.begin()
@@ -225,16 +210,19 @@ class AppWindow(QMainWindow):
         self.statusBar().showMessage(text)
         
     # show updated image frame on GUI window
-    def show_updated_frame(self, image:np.ndarray, fps:float):
+    def show_updated_frame(self, id:int, image:np.ndarray, fps:float):
+
         # converting color format
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
         # draw information
         t_start = datetime.now()
-        id = self.sender().get_camera_id()
+        # id = self.sender().get_camera_id()
         
         cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
         cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
+        
+        # self.__console.info(f"{id}")
         
         #converting ndarray to qt image
         _h, _w, _ch = rgb_image.shape
@@ -252,8 +240,11 @@ class AppWindow(QMainWindow):
             self.__console.critical(f"{e}")
         
         
+        
     # close event callback function by user
     def closeEvent(self, a0: QCloseEvent) -> None:
+
+        self.cameras.close() # multi camera controller closed
         
         # if recording.. stop working
         if self.__recorder!=None:
@@ -265,8 +256,9 @@ class AppWindow(QMainWindow):
         
         # close monitoring thread
         try:
-            self.__sys_monitor.close()
-            self.__gpu_monitor.close()
+            pass
+            #self.__sys_monitor.close()
+            #self.__gpu_monitor.close()
         except AttributeError as e:
             self.__console.critical(f"{e}")
             
