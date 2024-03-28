@@ -53,7 +53,7 @@ class image_writer(threading.Thread):
     
     def save(self, image:np.ndarray):
         if self.__is_running:
-            self.current_save_path = pathlib.Path(f"{self.image_out_path}") / pathlib.Path(f"{self.prefix}_{self.counter}.png")
+            self.current_save_path = pathlib.Path(f"{self.image_out_path}") / pathlib.Path(f"{self.prefix}_{self.counter}.jpg")
             self.queue.put(image)
             self.counter = self.counter+1
 
