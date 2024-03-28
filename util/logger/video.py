@@ -31,7 +31,8 @@ class VideoRecorder(QObject):
         self.__resolution = resolution
         self.__fps = fps
         self.__ext = ext
-        self.__fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        #self.__fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        self.__fourcc = cv2.VideoWriter_fourcc(*'AVC1')
         self.__video_outfile_absolute = None
 
     def start(self):
@@ -59,6 +60,7 @@ class VideoRecorder(QObject):
         self.__console.warning("Not support yet.")
     
     def stop(self):
+        print("recoring stop")
         if self.__writer:
             self.__writer.release()
         self.__is_recording = False

@@ -137,7 +137,18 @@ class AppWindow(QMainWindow):
         
         # create camera instance
         self.cameras = GigEMultiCameraController()
+        
+        # recorder
+        for id in range(self.cameras.get_num_camera()):
+            self.__recorder_container[id] = VideoRecorder(dirpath=(self.__configure["app_path"] / self.__configure["video_out_path"]), 
+                                                              filename=f"camera_{id}",
+                                                              ext=self.__configure["video_extension"],
+                                                              resolution=(int(self.__configure["camera_width"]), int(self.__configure["camera_height"])),
+                                                              fps=float(self.__configure["camera_fps"]))
+        
         self.cameras.frame_update_signal.connect(self.show_updated_frame) # connect to frame grab signal
+        self.cameras.frame_update_signal.connect(self.write_frame)
+        # self.cameras.frame_write_signal.connect(self.write_frame) # connect to frame write
         self.cameras.begin_thread()
     
     # click event callback function
@@ -154,9 +165,11 @@ class AppWindow(QMainWindow):
     # data recording
     def on_select_start_stop_data_recording(self):
         if self.sender().isChecked(): #start recording
-            self.__recorder.start()
+            for recorder in self.__recorder_container.values():
+                recorder.start()
         else:   # stop recording
-            self.__recorder.stop()
+            for recorder in self.__recorder_container.values():
+                recorder.stop()
     
     # start image capture
     def on_select_capture_image(self):
@@ -208,6 +221,12 @@ class AppWindow(QMainWindow):
     # show message on status bar
     def show_on_statusbar(self, text):
         self.statusBar().showMessage(text)
+
+    # write frame
+    def write_frame(self, id:int, image:np.ndarray, fps:float):
+        #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        self.__recorder_container[id].write_frame(image, fps)
         
     # show updated image frame on GUI window
     def show_updated_frame(self, id:int, image:np.ndarray, fps:float):
@@ -246,13 +265,13 @@ class AppWindow(QMainWindow):
 
         self.cameras.close() # multi camera controller closed
         
-        # if recording.. stop working
-        if self.__recorder!=None:
-            self.__recorder.stop()
+        # recorder stop
+        for rec in self.__recorder_container.values():
+            rec.stop()
         
+        # camera close
         for camera in self.__camera_container.values():
             camera.close()
-            
         
         # close monitoring thread
         try:

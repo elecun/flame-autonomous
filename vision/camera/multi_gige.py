@@ -34,6 +34,7 @@ _camera_array_container:pylon.InstantCameraArray = None
 class Controller(QThread):
     
     frame_update_signal = pyqtSignal(int, np.ndarray, float) # to gui and process
+    frame_write_signal = pyqtSignal(int, np.ndarray, float) # to write image/video
     
     def __init__(self):
         super().__init__()
@@ -100,6 +101,7 @@ class Controller(QThread):
                 
                 # send image
                 self.frame_update_signal.emit(camera_id, raw_image, framerate)
+                self.frame_write_signal.emit(camera_id, raw_image, framerate)
 
                 time.sleep(0.01)
                 if evt.is_set():
