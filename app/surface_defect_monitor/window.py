@@ -30,14 +30,66 @@ from util.monitor.gpu import GPUStatusMonitor
 from util.logger.console import ConsoleLogger
 from vision.SDD.ResNet import ResNet9 as SDDModel
 
+import threading
+import queue
+import time
+
 '''
 Main window
 '''
+
+class image_writer(threading.Thread):
+    def __init__(self, prefix:str, save_path:pathlib.Path):
+        super().__init__()
+
+        self.initial_save_path = save_path
+        self.current_save_path = save_path
+        self.prefix = prefix
+        self.queue = queue.Queue()
+        self.stop_event = threading.Event()
+        self.counter = 0
+
+        self.__is_running = False
+    
+    def save(self, image:np.ndarray):
+        if self.__is_running:
+            self.current_save_path = pathlib.Path(f"{self.image_out_path}") / pathlib.Path(f"{self.prefix}_{self.counter}.png")
+            self.queue.put(image)
+            self.counter = self.counter+1
+
+    def reset_counter(self):
+        self.counter = 0
+
+    def run(self):
+        while not self.stop_event.is_set():
+            if not self.queue.empty():
+                image_data = self.queue.get()
+                cv2.imwrite(self.current_save_path.as_posix(), image_data)
+            time.sleep(0.001)
+
+    def begin(self):
+        # create directory
+        record_start_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        self.image_out_path = self.initial_save_path / record_start_datetime
+        self.image_out_path.mkdir(parents=True, exist_ok=True)
+
+        self.__is_running = True
+        self.counter = 0
+
+    def stop(self):
+        self.__is_running = False
+        self.counter = 0
+
+    def terminate(self):
+        self.stop_event.set()
+
+
 class AppWindow(QMainWindow):
     def __init__(self, config:dict):
         super().__init__()
         
         self.__console = ConsoleLogger.get_logger()
+        self.__image_recorder = {}
 
         try:            
             if "gui" in config:
@@ -76,6 +128,9 @@ class AppWindow(QMainWindow):
                 self.__frame_window_map = {}
                 for idx, id in enumerate(config["camera_id"]):
                     self.__frame_window_map[id] = config["camera_window"][idx]
+                    self.__image_recorder[id] = image_writer(prefix=str(f"camera_{id}"), save_path=(config["app_path"] / config["image_out_path"]))
+                    self.__image_recorder[id].start()
+                    
 
                 
                 # apply monitoring
@@ -107,7 +162,7 @@ class AppWindow(QMainWindow):
         self.__recorder_container = {}
         
         #self.__camera:GigEMultiCameraController = None # camera device controller
-        self.__recorder:VideoRecorder = None # video recorder
+        #self.__recorder:VideoRecorder = None # video recorder
         
         # find GigE Cameras & update camera list
         __cam_found = gige_camera_discovery()
@@ -139,16 +194,18 @@ class AppWindow(QMainWindow):
         self.cameras = GigEMultiCameraController()
         
         # recorder
+        '''
         for id in range(self.cameras.get_num_camera()):
             self.__recorder_container[id] = VideoRecorder(dirpath=(self.__configure["app_path"] / self.__configure["video_out_path"]), 
                                                               filename=f"camera_{id}",
                                                               ext=self.__configure["video_extension"],
                                                               resolution=(int(self.__configure["camera_width"]), int(self.__configure["camera_height"])),
                                                               fps=float(self.__configure["camera_fps"]))
+        '''
         
         self.cameras.frame_update_signal.connect(self.show_updated_frame) # connect to frame grab signal
-        self.cameras.frame_update_signal.connect(self.write_frame)
-        # self.cameras.frame_write_signal.connect(self.write_frame) # connect to frame write
+        #self.cameras.frame_update_signal.connect(self.write_frame)
+        #self.cameras.frame_write_signal.connect(self.write_frame) # connect to frame write
         self.cameras.begin_thread()
     
     # click event callback function
@@ -165,11 +222,19 @@ class AppWindow(QMainWindow):
     # data recording
     def on_select_start_stop_data_recording(self):
         if self.sender().isChecked(): #start recording
-            for recorder in self.__recorder_container.values():
-                recorder.start()
+            for recorder in self.__image_recorder.values():
+                recorder.begin() # image recording
+                self.__console.info("Start image writing...")
+            # video recording
+            #for recorder in self.__recorder_container.values():
+            #    recorder.start()
         else:   # stop recording
-            for recorder in self.__recorder_container.values():
-                recorder.stop()
+            for recorder in self.__image_recorder.values():
+                recorder.stop() # image recording
+                self.__console.info("Stop image writing...")
+
+            #for recorder in self.__recorder_container.values():
+            #    recorder.stop()
     
     # start image capture
     def on_select_capture_image(self):
@@ -217,7 +282,6 @@ class AppWindow(QMainWindow):
             QMessageBox.warning(self, "Camera open failed", "Failed to open camera device")
             
 
-        
     # show message on status bar
     def show_on_statusbar(self, text):
         self.statusBar().showMessage(text)
@@ -233,6 +297,13 @@ class AppWindow(QMainWindow):
 
         # converting color format
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # write to image
+        self.__image_recorder[id].save(rgb_image)
+
+
+        #cv2.imwrite(f"camera_{id}_{self.__write_counter}.png", rgb_image)
+        #self.__write_counter = self.__write_counter+1
         
         # draw information
         t_start = datetime.now()
@@ -256,18 +327,22 @@ class AppWindow(QMainWindow):
             window = self.findChild(QLabel, self.__frame_window_map[id])
             window.setPixmap(pixmap.scaled(window.size(), Qt.AspectRatioMode.KeepAspectRatio))
         except Exception as e:
-            self.__console.critical(f"{e}")
+            self.__console.critical(f"camera {e}")
         
         
         
     # close event callback function by user
     def closeEvent(self, a0: QCloseEvent) -> None:
-
-        self.cameras.close() # multi camera controller closed
         
         # recorder stop
         for rec in self.__recorder_container.values():
             rec.stop()
+
+        self.cameras.close() # multi camera controller closed
+
+        # image recoder stop
+        for idx in self.__image_recorder:
+            self.__image_recorder[idx].terminate()
         
         # camera close
         for camera in self.__camera_container.values():

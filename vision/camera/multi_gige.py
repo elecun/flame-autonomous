@@ -21,6 +21,7 @@ import numpy as np
 from pypylon import genicam
 from pypylon import pylon
 import threading
+import queue
 import time
 
 #(Note) acA1300-60gc = 125MHz(PTP disabled), 1 Tick = 8ns
@@ -29,7 +30,9 @@ CAMERA_TICK_TIME = 1
 
 # global variable for camera array
 _camera_array_container:pylon.InstantCameraArray = None
-    
+
+
+
 # camera controller class
 class Controller(QThread):
     
@@ -39,8 +42,11 @@ class Controller(QThread):
     def __init__(self):
         super().__init__()
 
-        self.event = threading.Event() # for termination
-        self.grab_thread = threading.Thread(target=self.grab, args =(self.event, ))
+        self.grab_termination_event = threading.Event() # for termination
+        self.grab_thread = threading.Thread(target=self.grab, args =(self.grab_termination_event, ))
+
+        self.rec_termination_event = threading.Event()
+        self.recorder1_thread = threading.Thread(target=self.record1, args = (self.rec_termination_event, ))
 
         self.__converter = pylon.ImageFormatConverter()
         self.__converter.OutputPixelFormat = pylon.PixelType_BGR8packed
@@ -66,13 +72,19 @@ class Controller(QThread):
     
     # camera close
     def close(self) -> None:
-        self.event.set()
 
-        self.stop_thread = True # stop thread
+        # grab thread termination
+        self.grab_termination_event.set()
         self.grab_thread.join()
 
         _camera_array_container.Close()
         self.__console.info(f"Multi camera controller is closed")
+
+    def record1(self, evt):
+        while True:
+            time.sleep(0.01)
+            if evt.is_set():
+                break
 
     # grab image
     def grab(self, evt):
@@ -101,7 +113,7 @@ class Controller(QThread):
                 
                 # send image
                 self.frame_update_signal.emit(camera_id, raw_image, framerate)
-                self.frame_write_signal.emit(camera_id, raw_image, framerate)
+                #self.frame_write_signal.emit(camera_id, raw_image, framerate)
 
                 time.sleep(0.01)
                 if evt.is_set():

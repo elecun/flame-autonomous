@@ -31,8 +31,7 @@ class VideoRecorder(QObject):
         self.__resolution = resolution
         self.__fps = fps
         self.__ext = ext
-        #self.__fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-        self.__fourcc = cv2.VideoWriter_fourcc(*'AVC1')
+        self.__fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
         self.__video_outfile_absolute = None
 
     def start(self):
