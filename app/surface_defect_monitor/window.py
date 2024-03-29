@@ -298,8 +298,11 @@ class AppWindow(QMainWindow):
         # converting color format
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        # write to image
-        self.__image_recorder[id].save(rgb_image)
+        # write to image (수정)
+        cropped_1 = rgb_image[0: 960, 0: 924]
+        cropped_2 = rgb_image[961: 1920, 0: 924]
+        self.__image_recorder[id].save(cropped_1)
+        self.__image_recorder[id].save(cropped_2)
 
 
         #cv2.imwrite(f"camera_{id}_{self.__write_counter}.png", rgb_image)
