@@ -48,18 +48,14 @@ class image_writer(threading.Thread):
         self.prefix = prefix
         self.queue = queue.Queue()
         self.stop_event = threading.Event()
-        self.counter = 0
 
         self.__is_running = False
     
     def save(self, image:np.ndarray):
         if self.__is_running:
-            self.current_save_path = pathlib.Path(f"{self.image_out_path}") / pathlib.Path(f"{self.prefix}_{self.counter}.jpg")
+            postfix = datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')[:23]
+            self.current_save_path = pathlib.Path(f"{self.image_out_path}") / pathlib.Path(f"{self.prefix}_{postfix}.jpg")
             self.queue.put(image)
-            self.counter = self.counter+1
-
-    def reset_counter(self):
-        self.counter = 0
 
     def run(self):
         while not self.stop_event.is_set():
@@ -75,11 +71,9 @@ class image_writer(threading.Thread):
         self.image_out_path.mkdir(parents=True, exist_ok=True)
 
         self.__is_running = True
-        self.counter = 0
 
     def stop(self):
         self.__is_running = False
-        self.counter = 0
 
     def terminate(self):
         self.stop_event.set()
@@ -380,10 +374,7 @@ class AppWindow(QMainWindow):
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # write to image (수정)
-        cropped_1 = rgb_image[0: 960, 0: 924]
-        cropped_2 = rgb_image[961: 1920, 0: 924]
-        self.__image_recorder[id].save(cropped_1)
-        self.__image_recorder[id].save(cropped_2)
+        self.__image_recorder[id].save(image)
 
 
         #cv2.imwrite(f"camera_{id}_{self.__write_counter}.png", rgb_image)
