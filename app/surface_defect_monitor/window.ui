@@ -499,6 +499,9 @@
      </property>
     </widget>
     <widget class="QSlider" name="slide_ch1">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>80</x>
@@ -583,6 +586,9 @@
      </property>
     </widget>
     <widget class="QSlider" name="slide_ch2">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>80</x>
@@ -602,6 +608,9 @@
      </property>
     </widget>
     <widget class="QSlider" name="slide_ch3">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>80</x>
@@ -621,6 +630,9 @@
      </property>
     </widget>
     <widget class="QSlider" name="slide_ch4">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>80</x>

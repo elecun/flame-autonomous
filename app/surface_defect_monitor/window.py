@@ -127,7 +127,6 @@ class AppWindow(QMainWindow):
                 for idx, ch in enumerate(config["light_channel"]):
                     slider = self.findChild(QSlider, f"slide_ch{idx+1}")
                     slider.setValue(0)
-                    slider.setEnabled(False)
                     label_light_value = self.findChild(QLabel, f"label_value_slide_ch{idx+1}")
                     label_light_value.setText(f"{slider.value()}")
 
