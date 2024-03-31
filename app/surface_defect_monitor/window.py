@@ -182,7 +182,7 @@ class AppWindow(QMainWindow):
         self.__camera_container = {}
         self.__recorder_container = {}
         
-        #self.__camera:GigEMultiCameraController = None # camera device controller
+        self.__camera:GigEMultiCameraController = None # camera device controller
         #self.__recorder:VideoRecorder = None # video recorder
         
         # find GigE Cameras & update camera list
