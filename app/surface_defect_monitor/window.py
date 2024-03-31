@@ -186,8 +186,8 @@ class AppWindow(QMainWindow):
         #self.__recorder:VideoRecorder = None # video recorder
         
         # find GigE Cameras & update camera list
-        #__cam_found = gige_camera_discovery()
-        #self.__update_camera_list(__cam_found)
+        __cam_found = gige_camera_discovery()
+        self.__update_camera_list(__cam_found)
     
     '''
     slider changed event
