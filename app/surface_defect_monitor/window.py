@@ -9,13 +9,13 @@ import pathlib
 try:
     # using PyQt5
     from PyQt5.QtGui import QImage, QPixmap, QCloseEvent, QStandardItem, QStandardItemModel
-    from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog, QComboBox
+    from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog, QComboBox, QLineEdit, QSlider
     from PyQt5.uic import loadUi
     from PyQt5.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 except ImportError:
     # using PyQt6
     from PyQt6.QtGui import QImage, QPixmap, QCloseEvent, QStandardItem, QStandardItemModel
-    from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog, QComboBox
+    from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox, QProgressBar, QFileDialog, QComboBox, QLineEdit, QSlider
     from PyQt6.uic import loadUi
     from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
     
@@ -33,6 +33,7 @@ from vision.SDD.ResNet import ResNet9 as SDDModel
 import threading
 import queue
 import time
+import serial
 
 '''
 Main window
@@ -90,6 +91,7 @@ class AppWindow(QMainWindow):
         
         self.__console = ConsoleLogger.get_logger()
         self.__image_recorder = {}
+        self.__light_controller = None
 
         try:            
             if "gui" in config:
@@ -111,6 +113,32 @@ class AppWindow(QMainWindow):
                 self.btn_camera_discovery.clicked.connect(self.on_click_camera_discovery)
                 self.table_camera_list.doubleClicked.connect(self.on_dbclick_camera_list)
                 self.btn_inference.clicked.connect(self.on_click_inference)
+                
+                # serial for light control
+                for idx, ch in enumerate(config["light_channel"]):
+                    label_light = self.findChild(QLabel, f"label_light_ch{idx+1}")
+                    label_light.setText(f"Ch. {ch}")
+                
+                # serial port
+                edit_port = self.findChild(QLineEdit, "edit_light_port")
+                edit_port.setText(config["light_default_port"])
+                self.btn_light_connect.clicked.connect(self.on_click_light_connect)
+                self.btn_light_disconnect.clicked.connect(self.on_click_light_disconnect)
+                
+                # sereial baudrate
+                edit_baud = self.findChild(QLineEdit, "edit_light_baudrate")
+                edit_baud.setText(str(config["light_default_baudrate"]))
+                
+                # slider
+                for idx, ch in enumerate(config["light_channel"]):
+                    slider = self.findChild(QSlider, f"slide_ch{idx+1}")
+                    slider.setValue(0)
+                    slider.setEnabled(False)
+                    label_light_value = self.findChild(QLabel, f"label_value_slide_ch{idx+1}")
+                    label_light_value.setText(f"{slider.value()}")
+
+                    slider.sliderReleased.connect(self.on_released_slider_value)
+                    slider.valueChanged.connect(self.on_changed_slider_value)
                 
                 self.__model_selection = self.findChild(QComboBox, name="cmbbox_inference_model")
                 self.__model_selection.currentIndexChanged.connect(self.on_changed_model_selection_index)
@@ -165,9 +193,62 @@ class AppWindow(QMainWindow):
         #self.__recorder:VideoRecorder = None # video recorder
         
         # find GigE Cameras & update camera list
-        __cam_found = gige_camera_discovery()
-        self.__update_camera_list(__cam_found)
+        #__cam_found = gige_camera_discovery()
+        #self.__update_camera_list(__cam_found)
+    
+    '''
+    slider changed event
+    '''
+    def on_changed_slider_value(self):
+        slider = self.sender()
+        label_light_value = self.findChild(QLabel, f"label_value_{slider.objectName()}")
+        label_light_value.setText(f"{slider.value()}")
+    
+    '''
+    slider relased event
+    '''
+    def on_released_slider_value(self):
+        slider = self.sender()
+        self.__console.info(f"{slider.value()}")
         
+        if self.__light_controller != None:
+            start_code = 0x7E
+            label = 6  # Output Only Send DMX Packet Request
+            end_code = 0xE7
+            Num=slider.value()
+            ch1=Num
+            ch5=Num
+            ch9=Num
+            ch13=Num
+            dmx_data =  [0]*1+[int(ch1)]*1+ \
+                        [0]*3+[int(ch5)]*1+ \
+                        [0]*3+[int(ch9)]*1+ \
+                        [0]*3+[int(ch13)]*1+[0]*2
+            dmx_length = len(dmx_data) + 1  # DMX 데이터 길이 + 1 (스타트 코드 포함)
+            data_length_lsb = dmx_length & 0xFF  # 데이터 길이 LSB
+            data_length_msb = (dmx_length >> 8) & 0xFF  # 데이터 길이 
+
+            message = [start_code, label, data_length_lsb, data_length_msb, 0] + dmx_data + [end_code]
+            self.__light_controller.write(bytearray(message))
+        
+    '''
+    light control
+    '''
+    def on_click_light_connect(self):
+        edit_port = self.findChild(QLineEdit, "edit_light_port")
+        edit_baud = self.findChild(QLineEdit, "edit_light_baudrate")
+        
+        if self.__light_controller == None:
+            self.__light_controller = serial.Serial(port=edit_port.text(), baudrate=int(edit_baud.text()))
+            if self.__light_controller.is_open:
+                self.btn_light_connect.setEnabled(False)
+                self.btn_light_disconnect.setEnabled(True)
+    
+    def on_click_light_disconnect(self):
+        if self.__light_controller.is_open:
+            self.__light_controller.close()
+            self.btn_light_connect.setEnabled(True)
+            self.btn_light_disconnect.setEnabled(False)
 
     '''
     Private Member functions
@@ -341,7 +422,8 @@ class AppWindow(QMainWindow):
         for rec in self.__recorder_container.values():
             rec.stop()
 
-        self.cameras.close() # multi camera controller closed
+        if self.cameras.get_num_camera()>0:
+            self.cameras.close() # multi camera controller closed
 
         # image recoder stop
         for idx in self.__image_recorder:
