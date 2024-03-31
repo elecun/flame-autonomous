@@ -54,7 +54,7 @@ class image_writer(threading.Thread):
     def save(self, image:np.ndarray):
         if self.__is_running:
             postfix = datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')[:23]
-            self.current_save_path = pathlib.Path(f"{self.image_out_path}") / pathlib.Path(f"{self.prefix}_{postfix}.jpg")
+            self.current_save_path = pathlib.Path(f"{self.image_out_path}") / pathlib.Path(f"{postfix}.jpg")
             self.queue.put(image)
 
     def run(self):
@@ -67,7 +67,7 @@ class image_writer(threading.Thread):
     def begin(self):
         # create directory
         record_start_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        self.image_out_path = self.initial_save_path / record_start_datetime
+        self.image_out_path = self.initial_save_path / record_start_datetime / self.prefix
         self.image_out_path.mkdir(parents=True, exist_ok=True)
 
         self.__is_running = True
