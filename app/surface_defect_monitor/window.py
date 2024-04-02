@@ -53,11 +53,17 @@ class image_writer(threading.Thread):
 
         self.__is_running = False
     
-    def save(self, image:np.ndarray):
+    def save(self, class_name:str, image:np.ndarray):
         if self.__is_running:
+            print(class_name)
             postfix = datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')[:23]
-            self.current_save_path = pathlib.Path(f"{self.image_out_path}") / pathlib.Path(f"{postfix}.jpg")
+
+            self.image_out_path_current = self.image_out_path / self.prefix / pathlib.Path(f"{class_name}")
+            self.image_out_path_current.mkdir(parents=True, exist_ok=True)
+
+            self.current_save_path = pathlib.Path(f"{self.image_out_path_current}") / pathlib.Path(f"{postfix}.jpg")
             self.queue.put(image)
+
 
     def run(self):
         while not self.stop_event.is_set():
@@ -69,7 +75,7 @@ class image_writer(threading.Thread):
     def begin(self):
         # create directory
         record_start_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        self.image_out_path = self.initial_save_path / record_start_datetime / self.prefix
+        self.image_out_path = self.initial_save_path / record_start_datetime
         self.image_out_path.mkdir(parents=True, exist_ok=True)
 
         self.__is_running = True
@@ -420,9 +426,6 @@ class AppWindow(QMainWindow):
         # converting color format
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        # write to image (수정)
-        self.__image_recorder[id].save(image)
-
         if self.inference:
         
             # Neurocle code
@@ -458,6 +461,9 @@ class AppWindow(QMainWindow):
                 class_name = self.predictor.get_class_name(cla.idx)
                 score = results.probs.get(i, 0)
                 #print(f"class name : {class_name} | probability : {round(score,2)}")
+
+
+                self.__image_recorder[id].save(class_name, image)
 
                 # if not results.cams.empty():
                 #     alpha = 0.3
