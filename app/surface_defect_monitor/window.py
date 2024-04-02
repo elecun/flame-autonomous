@@ -437,9 +437,9 @@ class AppWindow(QMainWindow):
         end = time.time()
         if results.get_status() != nrt.STATUS_SUCCESS:
             raise Exception("Predict failed. : " + nrt.get_last_error_msg())
-        print(
-            f"duration per batch ({self.batch_size} images) : {round((end - start) * 1000, 2)} ms"
-        )
+        # print(
+        #     f"duration per batch ({self.batch_size} images) : {round((end - start) * 1000, 2)} ms"
+        # )
         inputs.clear()
 
         #cv2.imwrite(f"camera_{id}_{self.__write_counter}.png", rgb_image)
@@ -457,7 +457,7 @@ class AppWindow(QMainWindow):
             #print(f"class name : {class_name} | probability : {round(score,2)}")
 
             if not results.cams.empty():
-                alpha = 0.6
+                alpha = 0.3
                 cam = results.cams.get(i)
                 mat_cam = cam.cam_to_numpy()
                 mat_cam = mat_cam.reshape([cam.get_height(), cam.get_width(), 3])
