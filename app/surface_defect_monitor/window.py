@@ -97,6 +97,7 @@ class AppWindow(QMainWindow):
         self.threshold_flag = False
         self.device_idx = 0
         self.predictor = self.load_predictor()
+        self.inference = True
 
         try:            
             if "gui" in config:
@@ -163,7 +164,7 @@ class AppWindow(QMainWindow):
                     self.__image_recorder[id] = image_writer(prefix=str(f"camera_{id}"), save_path=(config["app_path"] / config["image_out_path"]))
                     self.__image_recorder[id].start()
                     
-
+                
                 
                 # apply monitoring
                 '''
@@ -420,59 +421,62 @@ class AppWindow(QMainWindow):
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # write to image (수정)
-        #self.__image_recorder[id].save(image)
-        
-        # Neurocle code
-        ######################################################################################################
-        # Input images
-        inputs = nrt.Input()
-        image_buff = nrt.NDBuffer.from_numpy(rgb_image)
-        status = inputs.extend(image_buff)
-        if status != nrt.STATUS_SUCCESS:
-            raise Exception("Extend the input failed. : " + nrt.get_last_error_msg())
-        
-        # If the inputs have reached the batch size, start the prediction.
-        start = time.time()
-        results = self.predictor.predict(inputs)
-        end = time.time()
-        if results.get_status() != nrt.STATUS_SUCCESS:
-            raise Exception("Predict failed. : " + nrt.get_last_error_msg())
-        # print(
-        #     f"duration per batch ({self.batch_size} images) : {round((end - start) * 1000, 2)} ms"
-        # )
-        inputs.clear()
+        self.__image_recorder[id].save(image)
 
-        #cv2.imwrite(f"camera_{id}_{self.__write_counter}.png", rgb_image)
-        #self.__write_counter = self.__write_counter+1
+        if self.inference:
         
-        # draw information
-        t_start = datetime.now()
-        # id = self.sender().get_camera_id()
-        
-        # Classification results(CAM)
-        for i in range(results.classes.get_count()):
-            cla = results.classes.get(i)
-            class_name = self.predictor.get_class_name(cla.idx)
-            score = results.probs.get(i, 0)
-            #print(f"class name : {class_name} | probability : {round(score,2)}")
+            # Neurocle code
+            ######################################################################################################
+            # Input images
+            inputs = nrt.Input()
+            image_buff = nrt.NDBuffer.from_numpy(rgb_image)
+            status = inputs.extend(image_buff)
+            if status != nrt.STATUS_SUCCESS:
+                raise Exception("Extend the input failed. : " + nrt.get_last_error_msg())
+            
+            # If the inputs have reached the batch size, start the prediction.
+            start = time.time()
+            results = self.predictor.predict(inputs)
+            end = time.time()
+            if results.get_status() != nrt.STATUS_SUCCESS:
+                raise Exception("Predict failed. : " + nrt.get_last_error_msg())
+            # print(
+            #     f"duration per batch ({self.batch_size} images) : {round((end - start) * 1000, 2)} ms"
+            # )
+            inputs.clear()
 
-            if not results.cams.empty():
-                alpha = 0.3
-                cam = results.cams.get(i)
-                mat_cam = cam.cam_to_numpy()
-                mat_cam = mat_cam.reshape([cam.get_height(), cam.get_width(), 3])
-                mat_cam = cv2.applyColorMap(mat_cam, cv2.COLORMAP_JET)
-                cv2.addWeighted(rgb_image, alpha, mat_cam, 1-alpha, 0, rgb_image)
+            #cv2.imwrite(f"camera_{id}_{self.__write_counter}.png", rgb_image)
+            #self.__write_counter = self.__write_counter+1
+            
+            # draw information
+            t_start = datetime.now()
+            # id = self.sender().get_camera_id()
+            
+            # Classification results(CAM)
+            for i in range(results.classes.get_count()):
+                cla = results.classes.get(i)
+                class_name = self.predictor.get_class_name(cla.idx)
+                score = results.probs.get(i, 0)
+                #print(f"class name : {class_name} | probability : {round(score,2)}")
+
+                # if not results.cams.empty():
+                #     alpha = 0.3
+                #     cam = results.cams.get(i)
+                #     mat_cam = cam.cam_to_numpy()
+                #     mat_cam = mat_cam.reshape([cam.get_height(), cam.get_width(), 3])
+                #     mat_cam = cv2.applyColorMap(mat_cam, cv2.COLORMAP_JET)
+                #     cv2.addWeighted(rgb_image, alpha, mat_cam, 1-alpha, 0, rgb_image)
                 cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
                 cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
-        #############################################################################################
+            #############################################################################################
                 
         # self.__console.info(f"{id}")
         
         #converting ndarray to qt image
         _h, _w, _ch = rgb_image.shape
         _bpl = _ch*_w # bytes per line
-        qt_image = QImage(rgb_image.data, _w, _h, _bpl, QImage.Format.Format_RGB888)
+        #qt_image = QImage(rgb_cam_image.data, _w, _h, _bpl, QImage.Format.Format_RGB888) # CAM image
+        qt_image = QImage(rgb_image.data, _w, _h, _bpl, QImage.Format.Format_RGB888)  # original image
 
         # converting qt image to QPixmap
         pixmap = QPixmap.fromImage(qt_image)
