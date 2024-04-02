@@ -55,7 +55,6 @@ class image_writer(threading.Thread):
     
     def save(self, class_name:str, image:np.ndarray):
         if self.__is_running:
-            print(class_name)
             postfix = datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')[:23]
 
             self.image_out_path_current = self.image_out_path / self.prefix / pathlib.Path(f"{class_name}")
