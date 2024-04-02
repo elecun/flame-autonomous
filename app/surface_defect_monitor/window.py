@@ -95,8 +95,9 @@ class AppWindow(QMainWindow):
         self.__light_controller = None
 
         # Neurocle parameter setting
-        self.model_path = "C://Users/iae/Documents/Neuro-R/NRT_example/example_data/anc_ex_model.net"
-        self.predictor_path = "C://Users/iae/Documents/Neuro-R/NRT_example/example_data/anc_ex_predictor.nrpd"
+        self.base_path = "C://Users/iae/Desktop/Neurocle_model"
+        self.model_path = os.path.join(self.base_path, "ano_1.net")
+        self.predictor_path = os.path.join(self.base_path, "ano_1.nrpd")
         self.batch_size = 1
         self.fp16_flag = True
         self.threshold_flag = False
@@ -461,8 +462,10 @@ class AppWindow(QMainWindow):
                 score = results.probs.get(i, 0)
                 #print(f"class name : {class_name} | probability : {round(score,2)}")
 
-
-                self.__image_recorder[id].save(class_name, image)
+                if class_name =="Anomaly":
+                    self.__image_recorder[id].save("NG", image)
+                else:
+                    self.__image_recorder[id].save("Good", image)
 
                 # if not results.cams.empty():
                 #     alpha = 0.3
@@ -473,6 +476,10 @@ class AppWindow(QMainWindow):
                 #     cv2.addWeighted(rgb_image, alpha, mat_cam, 1-alpha, 0, rgb_image)
                 cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
                 cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
+                if class_name == "Anomaly":
+                    cv2.putText(rgb_image, "NG", (900, 50), cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255,0,0), 2, cv2.LINE_AA)
+                else:
+                    cv2.putText(rgb_image, "Good", (900, 50), cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0,0,255), 2, cv2.LINE_AA)
             #############################################################################################
                 
         # self.__console.info(f"{id}")
