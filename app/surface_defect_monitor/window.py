@@ -479,7 +479,7 @@ class AppWindow(QMainWindow):
                 if class_name == "Anomaly":
                     cv2.putText(rgb_image, "NG", (900, 50), cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255,0,0), 2, cv2.LINE_AA)
                 else:
-                    cv2.putText(rgb_image, "Good", (900, 50), cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0,0,255), 2, cv2.LINE_AA)
+                    cv2.putText(rgb_image, "Good", (900, 50), cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0,255,0), 2, cv2.LINE_AA)
             #############################################################################################
                 
         # self.__console.info(f"{id}")
