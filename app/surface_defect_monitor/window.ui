@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1502</width>
+    <width>1920</width>
     <height>861</height>
    </rect>
   </property>
@@ -25,8 +25,8 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>500</width>
-      <height>500</height>
+      <width>384</width>
+      <height>240</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -36,7 +36,7 @@
      <string>Camera #1</string>
     </property>
     <property name="alignment">
-     <set>Qt::AlignCenter</set>
+     <set>Qt::AlignmentFlag::AlignCenter</set>
     </property>
    </widget>
    <widget class="QGroupBox" name="groupBox">
@@ -224,10 +224,10 @@
    <widget class="QGroupBox" name="groupBox_3">
     <property name="geometry">
      <rect>
-      <x>770</x>
-      <y>510</y>
+      <x>1190</x>
+      <y>490</y>
       <width>401</width>
-      <height>271</height>
+      <height>311</height>
      </rect>
     </property>
     <property name="title">
@@ -237,7 +237,7 @@
      <property name="geometry">
       <rect>
        <x>290</x>
-       <y>230</y>
+       <y>270</y>
        <width>100</width>
        <height>32</height>
       </rect>
@@ -255,11 +255,11 @@
        <x>5</x>
        <y>23</y>
        <width>391</width>
-       <height>201</height>
+       <height>241</height>
       </rect>
      </property>
      <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
+      <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
      </property>
      <attribute name="horizontalHeaderStretchLastSection">
       <bool>true</bool>
@@ -331,10 +331,10 @@
    <widget class="QLabel" name="window_camera_2">
     <property name="geometry">
      <rect>
-      <x>500</x>
+      <x>384</x>
       <y>0</y>
-      <width>500</width>
-      <height>500</height>
+      <width>384</width>
+      <height>240</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -344,16 +344,16 @@
      <string>Camera #2</string>
     </property>
     <property name="alignment">
-     <set>Qt::AlignCenter</set>
+     <set>Qt::AlignmentFlag::AlignCenter</set>
     </property>
    </widget>
    <widget class="QLabel" name="window_camera_3">
     <property name="geometry">
      <rect>
-      <x>1000</x>
+      <x>768</x>
       <y>0</y>
-      <width>500</width>
-      <height>500</height>
+      <width>384</width>
+      <height>240</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -363,7 +363,7 @@
      <string>Camera #3</string>
     </property>
     <property name="alignment">
-     <set>Qt::AlignCenter</set>
+     <set>Qt::AlignmentFlag::AlignCenter</set>
     </property>
    </widget>
    <widget class="QGroupBox" name="groupBox_5">
@@ -444,10 +444,10 @@
    <widget class="QGroupBox" name="groupBox_6">
     <property name="geometry">
      <rect>
-      <x>1180</x>
-      <y>510</y>
+      <x>1600</x>
+      <y>490</y>
       <width>311</width>
-      <height>271</height>
+      <height>311</height>
      </rect>
     </property>
     <property name="title">
@@ -550,7 +550,7 @@
       <number>255</number>
      </property>
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="tickInterval">
       <number>10</number>
@@ -566,7 +566,7 @@
       </rect>
      </property>
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
     </widget>
     <widget class="QLabel" name="label_light_ch1">
@@ -637,7 +637,7 @@
       <number>255</number>
      </property>
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="tickInterval">
       <number>10</number>
@@ -659,7 +659,7 @@
       <number>255</number>
      </property>
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="tickInterval">
       <number>10</number>
@@ -681,7 +681,7 @@
       <number>255</number>
      </property>
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="tickInterval">
       <number>10</number>
@@ -740,14 +740,147 @@
      </property>
     </widget>
    </widget>
+   <widget class="QLabel" name="window_camera_4">
+    <property name="geometry">
+     <rect>
+      <x>1152</x>
+      <y>0</y>
+      <width>384</width>
+      <height>240</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(0, 0, 0);</string>
+    </property>
+    <property name="text">
+     <string>Camera #4</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="window_camera_5">
+    <property name="geometry">
+     <rect>
+      <x>1536</x>
+      <y>0</y>
+      <width>384</width>
+      <height>240</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(0, 0, 0);</string>
+    </property>
+    <property name="text">
+     <string>Camera #5</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="window_camera_6">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>240</y>
+      <width>384</width>
+      <height>240</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(0, 0, 0);</string>
+    </property>
+    <property name="text">
+     <string>Camera #6</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="window_camera_7">
+    <property name="geometry">
+     <rect>
+      <x>384</x>
+      <y>240</y>
+      <width>384</width>
+      <height>240</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(0, 0, 0);</string>
+    </property>
+    <property name="text">
+     <string>Camera #7</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="window_camera_8">
+    <property name="geometry">
+     <rect>
+      <x>768</x>
+      <y>240</y>
+      <width>384</width>
+      <height>240</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(0, 0, 0);</string>
+    </property>
+    <property name="text">
+     <string>Camera #8</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="window_camera_9">
+    <property name="geometry">
+     <rect>
+      <x>1152</x>
+      <y>240</y>
+      <width>384</width>
+      <height>240</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(0, 0, 0);</string>
+    </property>
+    <property name="text">
+     <string>Camera #9</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="window_camera_10">
+    <property name="geometry">
+     <rect>
+      <x>1536</x>
+      <y>240</y>
+      <width>384</width>
+      <height>240</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(0, 0, 0);</string>
+    </property>
+    <property name="text">
+     <string>Camera #10</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1502</width>
-     <height>43</height>
+     <width>1920</width>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuControl">
