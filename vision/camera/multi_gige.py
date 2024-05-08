@@ -123,7 +123,7 @@ class Controller(QThread):
                 self.frame_update_signal.emit(camera_id, raw_image, framerate)
                 #self.frame_write_signal.emit(camera_id, raw_image, framerate)
 
-                time.sleep(0.01)
+                time.sleep(0.001)
                 if evt.is_set():
                     break
             
