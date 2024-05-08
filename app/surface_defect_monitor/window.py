@@ -384,8 +384,13 @@ class AppWindow(QMainWindow):
     # show updated image frame on GUI window
     def show_updated_frame(self, id:int, image:np.ndarray, fps:float):
 
+        t_start = datetime.now()
+
         # converting color format
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
+        cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
         
         #converting ndarray to qt image
         _h, _w, _ch = rgb_image.shape
@@ -412,8 +417,8 @@ class AppWindow(QMainWindow):
         for rec in self.__recorder_container.values():
             rec.stop()
 
-        # if self.cameras.get_num_camera()>0:
-        #     self.cameras.close() # multi camera controller closed
+        if self.cameras.get_num_camera()>0:
+            self.cameras.close() # multi camera controller closed
 
         # image recoder stop
         for idx in self.__image_recorder:
@@ -422,10 +427,6 @@ class AppWindow(QMainWindow):
         # camera close
         for camera in self.__camera_container.values():
             camera.close()
-
-        # camera close
-        if self.cameras!=None:
-            self.cameras.close()
         
         # close monitoring thread
         try:

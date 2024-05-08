@@ -73,6 +73,10 @@ class Controller(QThread):
     # camera close
     def close(self) -> None:
 
+        self.requestInterruption() # to quit for thread
+        self.quit()
+        self.wait(1000)
+
         # grab thread termination
         self.grab_termination_event.set()
         self.grab_thread.join()
@@ -96,7 +100,8 @@ class Controller(QThread):
 
         while True:
 
-            print(evt.is_set())
+            if self.isInterruptionRequested():
+                break
 
             t_start = datetime.now()
             grab_image = _camera_array_container.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
