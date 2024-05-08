@@ -422,6 +422,10 @@ class AppWindow(QMainWindow):
         # camera close
         for camera in self.__camera_container.values():
             camera.close()
+
+        # camera close
+        if self.cameras!=None:
+            self.cameras.close()
         
         # close monitoring thread
         try:

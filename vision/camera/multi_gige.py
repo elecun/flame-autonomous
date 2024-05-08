@@ -95,6 +95,9 @@ class Controller(QThread):
         multi_camera_fps = {}
 
         while True:
+
+            print(evt.is_set())
+
             t_start = datetime.now()
             grab_image = _camera_array_container.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
             camera_id = grab_image.GetCameraContext()
@@ -158,10 +161,11 @@ def gige_camera_discovery() -> list:
         for idx, cam in enumerate(_camera_array_container):
             cam.Attach(_tlf.CreateDevice(_devices[idx]))
             _model_name = cam.GetDeviceInfo().GetModelName()
+            uid = cam.GetDeviceInfo().GetUserDefinedName()
             _ip_addr = _devices[idx].GetIpAddress()
-            print(f"found GigE Camera Device {_model_name}({_ip_addr})")
+            print(f"found GigE Camera Device (User ID:{uid}) {_model_name}({_ip_addr})")
             
-            _caminfo_array.append((idx, _model_name, _ip_addr))
+            _caminfo_array.append((uid, _model_name, _ip_addr))
         
     except Exception as e:
         print(f"{e}")
