@@ -16,3 +16,12 @@ ttach
 colorlog
 torchviz
 hiddenlayer
+pyserial
+
+PyQt6
+pyserial
+colorlog
+pypylon
+opencv-python
+psutil
+pynvml

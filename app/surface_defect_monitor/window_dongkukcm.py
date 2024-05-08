@@ -6,6 +6,7 @@ Steel Surface Defect Detectpr Application Window class
 import os, sys
 import cv2
 import pathlib
+import nrt
 
 try:
     # using PyQt5
@@ -93,6 +94,17 @@ class AppWindow(QMainWindow):
         self.__image_recorder = {}
         self.__light_controller = None
 
+        # Neurocle parameter setting
+        self.base_path = "C://Users/iae/Desktop/Neurocle_model"
+        self.model_path = os.path.join(self.base_path, "ano_1.net")
+        self.predictor_path = os.path.join(self.base_path, "ano_1.nrpd")
+        self.batch_size = 1
+        self.fp16_flag = True
+        self.threshold_flag = False
+        self.device_idx = 0
+        self.predictor = self.load_predictor()
+        self.inference = True
+
         try:            
             if "gui" in config:
                 
@@ -144,12 +156,12 @@ class AppWindow(QMainWindow):
                 self.__model_selection.addItems(["luxteel defect binary class", "luxteel defect multi class"])
                 
                 # define camera list table model
-                # _table_camera_columns = ["ID", "Camera Name", "Address"]
-                # self.__table_camlist_model = QStandardItemModel()
-                # self.__table_camlist_model.setColumnCount(len(_table_camera_columns))
-                # self.__table_camlist_model.setHorizontalHeaderLabels(_table_camera_columns)
-                #self.table_camera_list.setModel(self.__table_camlist_model)
-                #self.table_camera_list.resizeColumnsToContents()
+                _talbe_camera_columns = ["ID", "Camera Name", "Address"]
+                self.__table_camlist_model = QStandardItemModel()
+                self.__table_camlist_model.setColumnCount(len(_talbe_camera_columns))
+                self.__table_camlist_model.setHorizontalHeaderLabels(_talbe_camera_columns)
+                self.table_camera_list.setModel(self.__table_camlist_model)
+                self.table_camera_list.resizeColumnsToContents()
                 
                 # frame window mapping
                 self.__frame_window_map = {}
@@ -193,17 +205,44 @@ class AppWindow(QMainWindow):
         
         # find GigE Cameras & update camera list
         __cam_found = gige_camera_discovery()
-
-        # define camera list table model
-        _table_camera_columns = ["ID", "Camera Name", "Address"]
-        self.__table_camlist_model = QStandardItemModel()
-        self.__table_camlist_model.setColumnCount(len(_table_camera_columns))
-        self.__table_camlist_model.setHorizontalHeaderLabels(_table_camera_columns)
-        self.table_camera_list.setModel(self.__table_camlist_model)
-        self.table_camera_list.resizeColumnsToContents()
-
         self.__update_camera_list(__cam_found)
 
+    # Create Predictor or Load Predictor (1 Time)
+    def load_predictor(self):
+        if self.device_idx >= 0 and os.path.isfile(self.predictor_path):
+            print("Load the Predictor using the previously optimized Predictor file.")
+            predictor = nrt.Predictor(self.device_idx, self.predictor_path)
+        else:
+            print(
+                "Optimizing the Predictor for the Model and Device... It may take a few minutes."
+            )
+            # The default device setting for the Predictor is CPU(-1).
+            # If you want more diverse options, you can use it as shown in the comment below.
+            # predictor = nrt.Predictor(model_path)
+            predictor = nrt.Predictor(
+                self.model_path,
+                nrt.Model.MODELIO_OUT_CAM,
+                self.device_idx,
+                self.batch_size,
+                self.fp16_flag,
+                self.threshold_flag,
+            )
+
+            # Save the predictor information optimized for this device,
+            # so if the same model is used in the same device environment later, the optimized predictor can be reused.
+            if self.device_idx >= 0:
+                print("Save the information of the optimized Prediuctor to a file(.nrpd)")
+                status = predictor.save_predictor(self.predictor_path)
+                if status != nrt.STATUS_SUCCESS:
+                    raise Exception(
+                        "Model initialization failed. : " + nrt.get_last_error_msg()
+                    )
+        if predictor.get_status() != nrt.STATUS_SUCCESS:
+            raise Exception("Predictor save failed. : " + nrt.get_last_error_msg())
+        print("Predictor initialization complete...\n")
+
+        return predictor
+    
     '''
     slider changed event
     '''
@@ -386,6 +425,64 @@ class AppWindow(QMainWindow):
 
         # converting color format
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        if self.inference:
+        
+            # Neurocle code
+            ######################################################################################################
+            # Input images
+            inputs = nrt.Input()
+            image_buff = nrt.NDBuffer.from_numpy(rgb_image)
+            status = inputs.extend(image_buff)
+            if status != nrt.STATUS_SUCCESS:
+                raise Exception("Extend the input failed. : " + nrt.get_last_error_msg())
+            
+            # If the inputs have reached the batch size, start the prediction.
+            start = time.time()
+            results = self.predictor.predict(inputs)
+            end = time.time()
+            if results.get_status() != nrt.STATUS_SUCCESS:
+                raise Exception("Predict failed. : " + nrt.get_last_error_msg())
+            # print(
+            #     f"duration per batch ({self.batch_size} images) : {round((end - start) * 1000, 2)} ms"
+            # )
+            inputs.clear()
+
+            #cv2.imwrite(f"camera_{id}_{self.__write_counter}.png", rgb_image)
+            #self.__write_counter = self.__write_counter+1
+            
+            # draw information
+            t_start = datetime.now()
+            # id = self.sender().get_camera_id()
+            
+            # Classification results(CAM)
+            for i in range(results.classes.get_count()):
+                cla = results.classes.get(i)
+                class_name = self.predictor.get_class_name(cla.idx)
+                score = results.probs.get(i, 0)
+                #print(f"class name : {class_name} | probability : {round(score,2)}")
+
+                if class_name =="Anomaly":
+                    self.__image_recorder[id].save("NG", image)
+                else:
+                    self.__image_recorder[id].save("Good", image)
+
+                # if not results.cams.empty():
+                #     alpha = 0.3
+                #     cam = results.cams.get(i)
+                #     mat_cam = cam.cam_to_numpy()
+                #     mat_cam = mat_cam.reshape([cam.get_height(), cam.get_width(), 3])
+                #     mat_cam = cv2.applyColorMap(mat_cam, cv2.COLORMAP_JET)
+                #     cv2.addWeighted(rgb_image, alpha, mat_cam, 1-alpha, 0, rgb_image)
+                cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
+                cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
+                if class_name == "Anomaly":
+                    cv2.putText(rgb_image, "NG", (900, 50), cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255,0,0), 2, cv2.LINE_AA)
+                else:
+                    cv2.putText(rgb_image, "Good", (900, 50), cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0,255,0), 2, cv2.LINE_AA)
+            #############################################################################################
+                
+        # self.__console.info(f"{id}")
         
         #converting ndarray to qt image
         _h, _w, _ch = rgb_image.shape
@@ -412,8 +509,8 @@ class AppWindow(QMainWindow):
         for rec in self.__recorder_container.values():
             rec.stop()
 
-        # if self.cameras.get_num_camera()>0:
-        #     self.cameras.close() # multi camera controller closed
+        if self.cameras.get_num_camera()>0:
+            self.cameras.close() # multi camera controller closed
 
         # image recoder stop
         for idx in self.__image_recorder:
