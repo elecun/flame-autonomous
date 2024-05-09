@@ -404,7 +404,6 @@ class AppWindow(QMainWindow):
             self.__console.critical(f"camera {e}")
         
         
-        
     # close event callback function by user
     def closeEvent(self, a0: QCloseEvent) -> None:
         
