@@ -48,7 +48,7 @@ if __name__ == "__main__":
                 console.info(f"Video Out Directory : {video_out_dir}")
 
             # check required parameters
-            if not all(key in configure for key in ["sdd_model", "camera_id", "camera_fps", "camera_width", "camera_height", "video_extension"]):
+            if not all(key in configure for key in ["sdd_model", "sdd_model_name", "camera_id", "camera_fps", "camera_width", "camera_height", "video_extension", "image_extension"]):
                 raise Exception(f"some parameters does not set in the {args.config}configuration file")
 
             app = QApplication(sys.argv)

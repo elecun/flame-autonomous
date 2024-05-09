@@ -86,6 +86,7 @@ class AppWindow(QMainWindow):
         self.__console = ConsoleLogger.get_logger()
         self.__image_recorder = {}
         self.__light_controller = None
+        self.__camera_controller = None
 
         try:            
             if "gui" in config:
@@ -108,22 +109,20 @@ class AppWindow(QMainWindow):
                 self.table_camera_list.doubleClicked.connect(self.on_dbclick_camera_list)
                 self.btn_inference.clicked.connect(self.on_click_inference)
                 
-                # serial for light control
+                # update light control gui from configuration file
                 for idx, ch in enumerate(config["light_channel"]):
                     label_light = self.findChild(QLabel, f"label_light_ch{idx+1}")
                     label_light.setText(f"Ch. {ch}")
                 
-                # serial port
+                # update serial port and baudrate for light control from configuration file
                 edit_port = self.findChild(QLineEdit, "edit_light_port")
                 edit_port.setText(config["light_default_port"])
+                edit_baud = self.findChild(QLineEdit, "edit_light_baudrate")
+                edit_baud.setText(str(config["light_default_baudrate"]))
                 self.btn_light_connect.clicked.connect(self.on_click_light_connect)
                 self.btn_light_disconnect.clicked.connect(self.on_click_light_disconnect)
                 
-                # sereial baudrate
-                edit_baud = self.findChild(QLineEdit, "edit_light_baudrate")
-                edit_baud.setText(str(config["light_default_baudrate"]))
-                
-                # slider
+                # update slider gui component for light control
                 for idx, ch in enumerate(config["light_channel"]):
                     slider = self.findChild(QSlider, f"slide_ch{idx+1}")
                     slider.setValue(0)
@@ -414,6 +413,7 @@ class AppWindow(QMainWindow):
         for rec in self.__recorder_container.values():
             rec.stop()
 
+        
         if self.cameras.get_num_camera()>0:
             self.cameras.close() # multi camera controller closed
 

@@ -11,17 +11,13 @@ except ImportError:
     from PyQt6.QtGui import QImage
     
     
-import cv2
 from datetime import datetime
 from util.logger.video import VideoRecorder
-import platform
 from util.logger.console import ConsoleLogger
-from vision.camera.interface import ICamera
 import numpy as np
 from pypylon import genicam
 from pypylon import pylon
 import threading
-import queue
 import time
 
 #(Note) acA1300-60gc = 125MHz(PTP disabled), 1 Tick = 8ns
@@ -126,9 +122,9 @@ class Controller(QThread):
                 time.sleep(0.001)
                 if evt.is_set():
                     break
-            
-    def begin_thread(self):
-        self.__console.info("begin thread")
+
+    # start grabbing thread
+    def start_grab(self):
         self.grab_thread.start()
             
     # return camera id
@@ -168,6 +164,7 @@ def gige_camera_discovery() -> list:
             _model_name = cam.GetDeviceInfo().GetModelName()
             uid = cam.GetDeviceInfo().GetUserDefinedName()
             _ip_addr = _devices[idx].GetIpAddress()
+            _devices[idx].GevHeartbeatTimeout.SetValue(5000) # set timeout
             print(f"found GigE Camera Device (User ID:{uid}) {_model_name}({_ip_addr})")
             
             _caminfo_array.append((uid, _model_name, _ip_addr))

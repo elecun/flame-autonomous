@@ -91,7 +91,13 @@ class AppWindow(QMainWindow):
         
         self.__console = ConsoleLogger.get_logger()
         self.__image_recorder = {}
-        self.__light_controller = None
+        self.__light_controller = None # light controller
+        self.__camera_controller = None # camera array controller
+        self.__configure = config   # save configure parameters
+        self.__sdd_model_container = {}   # SDD classification model container
+        self.__camera_container = {}
+        self.__recorder_container = {}
+        self.__table_camlist_model = None # camera table model
 
         try:            
             if "gui" in config:
@@ -111,25 +117,22 @@ class AppWindow(QMainWindow):
                 
                 # GUI component event callback function connection
                 self.btn_camera_discovery.clicked.connect(self.on_click_camera_discovery)
-                self.table_camera_list.doubleClicked.connect(self.on_dbclick_camera_list)
                 self.btn_inference.clicked.connect(self.on_click_inference)
                 
-                # serial for light control
+                # update light control gui from configuration file
                 for idx, ch in enumerate(config["light_channel"]):
                     label_light = self.findChild(QLabel, f"label_light_ch{idx+1}")
                     label_light.setText(f"Ch. {ch}")
                 
-                # serial port
+                # update serial port and baudrate for light control from configuration file
                 edit_port = self.findChild(QLineEdit, "edit_light_port")
                 edit_port.setText(config["light_default_port"])
+                edit_baud = self.findChild(QLineEdit, "edit_light_baudrate")
+                edit_baud.setText(str(config["light_default_baudrate"]))
                 self.btn_light_connect.clicked.connect(self.on_click_light_connect)
                 self.btn_light_disconnect.clicked.connect(self.on_click_light_disconnect)
                 
-                # sereial baudrate
-                edit_baud = self.findChild(QLineEdit, "edit_light_baudrate")
-                edit_baud.setText(str(config["light_default_baudrate"]))
-                
-                # slider
+                # update slider gui component for light control
                 for idx, ch in enumerate(config["light_channel"]):
                     slider = self.findChild(QSlider, f"slide_ch{idx+1}")
                     slider.setValue(0)
@@ -138,18 +141,12 @@ class AppWindow(QMainWindow):
 
                     slider.sliderReleased.connect(self.on_released_slider_value)
                     slider.valueChanged.connect(self.on_changed_slider_value)
-                
-                self.__model_selection = self.findChild(QComboBox, name="cmbbox_inference_model")
-                self.__model_selection.currentIndexChanged.connect(self.on_changed_model_selection_index)
-                self.__model_selection.addItems(["luxteel defect binary class", "luxteel defect multi class"])
-                
-                # define camera list table model
-                # _table_camera_columns = ["ID", "Camera Name", "Address"]
-                # self.__table_camlist_model = QStandardItemModel()
-                # self.__table_camlist_model.setColumnCount(len(_table_camera_columns))
-                # self.__table_camlist_model.setHorizontalHeaderLabels(_table_camera_columns)
-                #self.table_camera_list.setModel(self.__table_camlist_model)
-                #self.table_camera_list.resizeColumnsToContents()
+
+                ui_model_dropdown = self.findChild(QComboBox, name="cmbbox_inference_model")
+
+                if len(config["sdd_model_name"]) == len(config["sdd_model"]) and len(config["sdd_model_name"])>0 and len(config["sdd_model"]):
+                    ui_model_dropdown.addItems(config["sdd_model_name"])
+                    self.__sdd_model_container["sdd_model_name"] = config["sdd_model"]
                 
                 # frame window mapping
                 self.__frame_window_map = {}
@@ -157,10 +154,10 @@ class AppWindow(QMainWindow):
                     self.__frame_window_map[id] = config["camera_window"][idx]
                     self.__image_recorder[id] = image_writer(prefix=str(f"camera_{id}"), save_path=(config["app_path"] / config["image_out_path"]))
                     self.__image_recorder[id].start()
-                    
                 
                 
                 # apply monitoring
+                # bad performance!!
                 '''
                 self.__sys_monitor = SystemStatusMonitor(interval_ms=1000)
                 self.__sys_monitor.usage_update_signal.connect(self.update_system_status)
@@ -180,21 +177,17 @@ class AppWindow(QMainWindow):
                 raise Exception("GUI definition must be contained in the configuration file.")
 
         except Exception as e:
-            self.__console.critical(f"{e}")
+            self.__console.critical(f"Load config error : {e}")
+
         
-        # member variables
-        self.__configure = config   # configure parameters
-        self.__sdd_model_container = {}   # SDD classification model container
-        self.__camera_container = {}
-        self.__recorder_container = {}
-        
-        self.__camera:GigEMultiCameraController = None # camera device controller
-        #self.__recorder:VideoRecorder = None # video recorder
+        self.__camera:GigEMultiCameraController = None # camera device controller (remove)
+        self.__camera_controller:GigEMultiCameraController = None # camera device controller
+        self.__recorder:VideoRecorder = None # video recorder
         
         # find GigE Cameras & update camera list
         __cam_found = gige_camera_discovery()
 
-        # define camera list table model
+        # update camera list 
         _table_camera_columns = ["ID", "Camera Name", "Address"]
         self.__table_camlist_model = QStandardItemModel()
         self.__table_camlist_model.setColumnCount(len(_table_camera_columns))
@@ -280,7 +273,13 @@ class AppWindow(QMainWindow):
     def on_select_camera_open(self):
         
         # create camera instance
-        self.cameras = GigEMultiCameraController()
+        try:
+            if self.__camera_controller is None:
+                self.__camera_controller = GigEMultiCameraController()
+                self.__camera_controller.frame_update_signal.connect(self.show_updated_frame) # connect to frame grab signal
+                self.__camera_controller.start_grab()
+        except Exception as e:
+            self.__console.critical(f"Camera controller cannot be open. It may already be opened.")
         
         # recorder
         '''
@@ -291,15 +290,19 @@ class AppWindow(QMainWindow):
                                                               resolution=(int(self.__configure["camera_width"]), int(self.__configure["camera_height"])),
                                                               fps=float(self.__configure["camera_fps"]))
         '''
-        
-        self.cameras.frame_update_signal.connect(self.show_updated_frame) # connect to frame grab signal
-        #self.cameras.frame_update_signal.connect(self.write_frame)
-        #self.cameras.frame_write_signal.connect(self.write_frame) # connect to frame write
-        self.cameras.begin_thread()
     
     # click event callback function
     def on_click_inference(self):
-        selected_model = self.__model_selection.currentText()
+
+        # getting selected model
+        ui_model_dropdown = self.findChild(QComboBox, name="cmbbox_inference_model")
+        selected = ui_model_dropdown.currentText()
+        model_filename = self.__sdd_model_container[selected]
+        print(f"selected model : {selected}({model_filename})")
+
+        # single process with selected model in thread
+        # code here
+
         _label_result = self.findChild(QLabel, "label_inference_result")
         
     
@@ -329,14 +332,6 @@ class AppWindow(QMainWindow):
     def on_select_capture_image(self):
         pass
     
-    # model selection
-    def on_changed_model_selection_index(self, index):
-        try:
-            model = self.__model_selection.currentText()
-            self.__console.info(f"Selected Model : {model}")
-        except Exception as e:
-            self.__console.critical(f"{e}")
-    
     # re-discover cameras
     def on_click_camera_discovery(self):
         # clear camera table
@@ -346,29 +341,29 @@ class AppWindow(QMainWindow):
         __cam_found = gige_camera_discovery()
         self.__update_camera_list(__cam_found)
         
-    # double clicked on camera list
-    def on_dbclick_camera_list(self):
-        row = self.table_camera_list.currentIndex().row()
-        col = self.table_camera_list.currentIndex().column()
+    # double clicked on camera list(remove)
+    # def on_dbclick_camera_list(self):
+    #     row = self.table_camera_list.currentIndex().row()
+    #     col = self.table_camera_list.currentIndex().column()
         
-        # get camera id from tableview
-        id = self.__table_camlist_model.index(row, 0).data()
+    #     # get camera id from tableview
+    #     id = self.__table_camlist_model.index(row, 0).data()
         
-        self.__console.info(f"Selected camera ID : {id}")
+    #     self.__console.info(f"Selected camera ID : {id}")
         
-        # if camera is working, close it
-        if self.__camera!=None:
-            self.__camera.close()
+    #     # if camera is working, close it
+    #     if self.__camera!=None:
+    #         self.__camera.close()
         
-        # set camera controller with id
-        self.__camera = GigEMultiCameraController(id)
-        if self.__camera.open():
-            self.__camera.frame_update_signal.connect(self.show_updated_frame)
-            self.__camera.begin()
-        else:
-            self.__camera.close()
-            self.__camera = None
-            QMessageBox.warning(self, "Camera open failed", "Failed to open camera device")
+    #     # set camera controller with id
+    #     self.__camera = GigEMultiCameraController(id)
+    #     if self.__camera.open():
+    #         self.__camera.frame_update_signal.connect(self.show_updated_frame)
+    #         self.__camera.begin()
+    #     else:
+    #         self.__camera.close()
+    #         self.__camera = None
+    #         QMessageBox.warning(self, "Camera open failed", "Failed to open camera device")
             
 
     # show message on status bar
@@ -417,16 +412,14 @@ class AppWindow(QMainWindow):
         for rec in self.__recorder_container.values():
             rec.stop()
 
-        if self.cameras.get_num_camera()>0:
-            self.cameras.close() # multi camera controller closed
+        # remove camera controller
+        if self.__camera_controller:
+            if self.__camera_controller.get_num_camera()>0:
+                self.__camera_controller.close()
 
         # image recoder stop
         for idx in self.__image_recorder:
             self.__image_recorder[idx].terminate()
-        
-        # camera close
-        for camera in self.__camera_container.values():
-            camera.close()
         
         # close monitoring thread
         try:
