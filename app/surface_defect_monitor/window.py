@@ -383,9 +383,10 @@ class AppWindow(QMainWindow):
 
         # converting color format
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        rgb_image = cv2.resize(rgb_image, dsize=(480, 300), interpolation=cv2.INTER_AREA)
 
-        cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
-        cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2, cv2.LINE_AA)
+        cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 1, cv2.LINE_AA)
+        cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 290), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 1, cv2.LINE_AA)
         
         #converting ndarray to qt image
         _h, _w, _ch = rgb_image.shape

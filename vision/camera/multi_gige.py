@@ -88,7 +88,7 @@ class Controller(QThread):
 
     # grab image
     def grab(self, evt):
-        _camera_array_container.StartGrabbing(pylon.GrabStrategy_LatestImageOnly, pylon.GrabLoop_ProvidedByUser)
+        _camera_array_container.StartGrabbing(pylon.GrabStrategy_LatestImageOnly, pylon.GrabLoop_ProvidedByInstantCamera)
         #_camera_array_container.StartGrabbing(pylon.GrabStrategy_OneByOne, pylon.GrabLoop_ProvidedByUser)
         #_camera_array_container.StartGrabbing(pylon.GrabStrategy_UpcomingImage, pylon.GrabLoop_ProvidedByUser)
         #_camera_array_container.StartGrabbing(pylon.GrabStrategy_LatestImages, pylon.GrabLoop_ProvidedByUser)
@@ -164,7 +164,7 @@ def gige_camera_discovery() -> list:
             _model_name = cam.GetDeviceInfo().GetModelName()
             uid = cam.GetDeviceInfo().GetUserDefinedName()
             _ip_addr = _devices[idx].GetIpAddress()
-            _devices[idx].GevHeartbeatTimeout.SetValue(5000) # set timeout
+            # _devices[idx].GevHeartbeatTimeout.SetValue(5000) # set timeout
             print(f"found GigE Camera Device (User ID:{uid}) {_model_name}({_ip_addr})")
             
             _caminfo_array.append((uid, _model_name, _ip_addr))
