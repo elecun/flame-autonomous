@@ -163,7 +163,8 @@ def gige_camera_discovery() -> list:
             cam.Attach(_tlf.CreateDevice(_devices[idx]))
 
             # cam.Open()
-            # cam.AcquisitionFrameRateEnable.SetValue('Off')
+            # cam.AcqusitionFrameRate.SetValue(10)
+            # cam.AcquisitionFrameRateEnable.SetValue('On')
             # cam.TriggerMode.SetValue("On")
             # cam.TriggerDelay.SetValue(0)
             # cam.TriggerSelector.SetValue('FrameStart')

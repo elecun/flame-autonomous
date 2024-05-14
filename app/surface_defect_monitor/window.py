@@ -397,15 +397,18 @@ class AppWindow(QMainWindow):
             pred_mask = self.__sdd_model.infer_image(rgb_image)
             pred_mask = pred_mask * 255
             pred_mask = pred_mask.astype(np.uint8)
-            pred_mask_squeezed = np.squeeze(pred_mask).reshape(640,640,1) # check dimension
-            pred_mask_color = cv2.cvtColor(pred_mask_squeezed, cv2.COLOR_GRAY2BGR)
+            #pred_mask_squeezed = np.squeeze(pred_mask).reshape(640,640,1) # check dimension
+            pred_mask_squeezed = pred_mask.reshape(640,640,1) # check dimension
+            pred_mask_color = cv2.cvtColor(pred_mask_squeezed, cv2.COLOR_GRAY2RGB)
             mask_rgb_image = cv2.resize(pred_mask_color, dsize=(480, 300), interpolation=cv2.INTER_AREA)
 
             # mask
             lower_white = np.array([10, 10, 10], dtype=np.uint8)
-            upper_white = np.array([255, 255, 255], dtype=np.uint8)
+            upper_white = np.array([250, 250, 250], dtype=np.uint8)
             mask = cv2.inRange(mask_rgb_image, lower_white, upper_white)
-            rgb_image[mask!=0] = [255, 0, 0]
+            mask_rgb_image[mask!=0] = [255, 0, 0]
+
+            rgb_image = cv2.addWeighted(rgb_image, 0.5, mask_rgb_image, 0.5, 0)
 
 
         cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 1, cv2.LINE_AA)
