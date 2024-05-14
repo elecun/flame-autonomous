@@ -31,6 +31,11 @@ from util.monitor.gpu import GPUStatusMonitor
 from util.logger.console import ConsoleLogger
 from vision.SDD.ResNet import ResNet9 as SDDModel
 
+# for TransUNET Segmentaiton
+#from vision.SDD.TransUNET_Seg.inference import SegInference
+#from vision.SDD.TransUNET_Seg.config import cfg
+
+
 import threading
 import queue
 import time
@@ -143,7 +148,6 @@ class AppWindow(QMainWindow):
                     slider.valueChanged.connect(self.on_changed_slider_value)
 
                 ui_model_dropdown = self.findChild(QComboBox, name="cmbbox_inference_model")
-
                 if len(config["sdd_model_name"]) == len(config["sdd_model"]) and len(config["sdd_model_name"])>0 and len(config["sdd_model"]):
                     ui_model_dropdown.addItems(config["sdd_model_name"])
                     self.__sdd_model_container["sdd_model_name"] = config["sdd_model"]
@@ -154,6 +158,10 @@ class AppWindow(QMainWindow):
                     self.__frame_window_map[id] = config["camera_window"][idx]
                     self.__image_recorder[id] = image_writer(prefix=str(f"camera_{id}"), save_path=(config["app_path"] / config["image_out_path"]))
                     self.__image_recorder[id].start()
+
+                # for SDD Model
+                print(self.__sdd_model_container.values())
+                self.__sdd_model_path = ""
                 
                 
                 # apply monitoring
@@ -340,30 +348,6 @@ class AppWindow(QMainWindow):
         # find & update
         __cam_found = gige_camera_discovery()
         self.__update_camera_list(__cam_found)
-        
-    # double clicked on camera list(remove)
-    # def on_dbclick_camera_list(self):
-    #     row = self.table_camera_list.currentIndex().row()
-    #     col = self.table_camera_list.currentIndex().column()
-        
-    #     # get camera id from tableview
-    #     id = self.__table_camlist_model.index(row, 0).data()
-        
-    #     self.__console.info(f"Selected camera ID : {id}")
-        
-    #     # if camera is working, close it
-    #     if self.__camera!=None:
-    #         self.__camera.close()
-        
-    #     # set camera controller with id
-    #     self.__camera = GigEMultiCameraController(id)
-    #     if self.__camera.open():
-    #         self.__camera.frame_update_signal.connect(self.show_updated_frame)
-    #         self.__camera.begin()
-    #     else:
-    #         self.__camera.close()
-    #         self.__camera = None
-    #         QMessageBox.warning(self, "Camera open failed", "Failed to open camera device")
             
 
     # show message on status bar
