@@ -5,3 +5,8 @@ pypylon
 opencv-python
 psutil
 pynvml
+torch
+torchvision
+tqdm
+einops
+easydict
