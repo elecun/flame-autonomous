@@ -563,7 +563,7 @@
       <number>255</number>
      </property>
      <property name="orientation">
-      <enum>Qt::Orientation::Horizontal</enum>
+      <enum>Qt::Horizontal</enum>
      </property>
      <property name="tickInterval">
       <number>10</number>
@@ -579,7 +579,7 @@
       </rect>
      </property>
      <property name="orientation">
-      <enum>Qt::Orientation::Horizontal</enum>
+      <enum>Qt::Horizontal</enum>
      </property>
     </widget>
     <widget class="QLabel" name="label_light_ch1">
@@ -650,7 +650,7 @@
       <number>255</number>
      </property>
      <property name="orientation">
-      <enum>Qt::Orientation::Horizontal</enum>
+      <enum>Qt::Horizontal</enum>
      </property>
      <property name="tickInterval">
       <number>10</number>
@@ -672,7 +672,7 @@
       <number>255</number>
      </property>
      <property name="orientation">
-      <enum>Qt::Orientation::Horizontal</enum>
+      <enum>Qt::Horizontal</enum>
      </property>
      <property name="tickInterval">
       <number>10</number>
@@ -694,7 +694,7 @@
       <number>255</number>
      </property>
      <property name="orientation">
-      <enum>Qt::Orientation::Horizontal</enum>
+      <enum>Qt::Horizontal</enum>
      </property>
      <property name="tickInterval">
       <number>10</number>
