@@ -327,6 +327,19 @@
       <string>Continuous Inference</string>
      </property>
     </widget>
+    <widget class="QPushButton" name="btn_model_load">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>220</y>
+       <width>100</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Load</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QLabel" name="window_camera_2">
     <property name="geometry">
@@ -550,7 +563,7 @@
       <number>255</number>
      </property>
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="tickInterval">
       <number>10</number>
@@ -566,7 +579,7 @@
       </rect>
      </property>
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
     </widget>
     <widget class="QLabel" name="label_light_ch1">
@@ -637,7 +650,7 @@
       <number>255</number>
      </property>
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="tickInterval">
       <number>10</number>
@@ -659,7 +672,7 @@
       <number>255</number>
      </property>
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="tickInterval">
       <number>10</number>
@@ -681,7 +694,7 @@
       <number>255</number>
      </property>
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="tickInterval">
       <number>10</number>
@@ -880,7 +893,7 @@
      <x>0</x>
      <y>0</y>
      <width>1920</width>
-     <height>24</height>
+     <height>43</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuControl">
