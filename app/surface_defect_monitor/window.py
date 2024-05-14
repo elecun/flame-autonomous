@@ -34,6 +34,7 @@ from vision.SDD.ResNet import ResNet9 as SDDModel
 # for TransUNET Segmentaiton
 #from vision.SDD.TransUNET_Seg.inference import SegInference
 #from vision.SDD.TransUNET_Seg.config import cfg
+from vision.SDD.TransUNET_Seg.inference import SegInference
 
 
 import threading
@@ -123,6 +124,7 @@ class AppWindow(QMainWindow):
                 # GUI component event callback function connection
                 self.btn_camera_discovery.clicked.connect(self.on_click_camera_discovery)
                 self.btn_inference.clicked.connect(self.on_click_inference)
+                self.btn_model_load.clicked.connect(self.on_click_model_load)
                 
                 # update light control gui from configuration file
                 for idx, ch in enumerate(config["light_channel"]):
@@ -312,6 +314,15 @@ class AppWindow(QMainWindow):
         # code here
 
         _label_result = self.findChild(QLabel, "label_inference_result")
+        
+    '''
+    inference model load
+    '''
+    def on_click_model_load(self):
+        ui_model_dropdown = self.findChild(QComboBox, name="cmbbox_inference_model")
+        selected = ui_model_dropdown.currentText()
+        model_filename = self.__sdd_model_container[selected]
+        print(f"selected model : {selected}({model_filename})")
         
     
     # re-discover all gige network camera
