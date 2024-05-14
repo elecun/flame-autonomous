@@ -5,10 +5,10 @@ import numpy as np
 import datetime
 
 # Additional Scripts
-from train_transunet import TransUNetSeg
-
-from utils.utils import thresh_func
-from config import cfg
+from .train_transunet import TransUNetSeg
+from .utils import thresh_func
+from .config import cfg
+import time
 
 
 class SegInference:
@@ -95,3 +95,26 @@ class SegInference:
             self.save_preds(preds)
 
         return preds
+
+    def infer_image(self, img):
+        # 이미지 전처리
+        img_torch = cv2.resize(img, (cfg.transunet.img_dim, cfg.transunet.img_dim))
+        img_torch = img_torch / 255.
+        img_torch = img_torch.transpose((2, 0, 1))
+        img_torch = np.expand_dims(img_torch, axis=0)
+        img_torch = torch.from_numpy(img_torch.astype('float32')).to(self.device)
+        
+        # 추론
+        with torch.no_grad():
+            start_time = time.perf_counter()
+            pred_mask = self.transunet.model(img_torch)
+            pred_mask = torch.sigmoid(pred_mask)
+            end_time = time.perf_counter()
+            elapsed_time = (end_time - start_time) * 1000  # 밀리초로 변환
+
+            formatted_time = "{:.2f}".format(elapsed_time)
+            print(f"Inference took {formatted_time} milliseconds")
+            
+            pred_mask = pred_mask.detach().cpu().numpy().transpose((0, 2, 3, 1))
+        
+        return pred_mask

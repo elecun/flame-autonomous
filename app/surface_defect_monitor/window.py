@@ -34,6 +34,7 @@ from vision.SDD.ResNet import ResNet9 as SDDModel
 # for TransUNET Segmentaiton
 #from vision.SDD.TransUNET_Seg.inference import SegInference
 #from vision.SDD.TransUNET_Seg.config import cfg
+import torch
 from vision.SDD.TransUNET_Seg.inference import SegInference
 
 
@@ -105,6 +106,10 @@ class AppWindow(QMainWindow):
         self.__recorder_container = {}
         self.__table_camlist_model = None # camera table model
 
+        self.__model_dir = pathlib.Path(__file__).parent / "model"
+        self.__sdd_model:SegInference = None
+        self.__do_inference = False
+
         try:            
             if "gui" in config:
                 
@@ -151,8 +156,9 @@ class AppWindow(QMainWindow):
 
                 ui_model_dropdown = self.findChild(QComboBox, name="cmbbox_inference_model")
                 if len(config["sdd_model_name"]) == len(config["sdd_model"]) and len(config["sdd_model_name"])>0 and len(config["sdd_model"]):
-                    ui_model_dropdown.addItems(config["sdd_model_name"])
-                    self.__sdd_model_container["sdd_model_name"] = config["sdd_model"]
+                    for idx, modelname in enumerate(config["sdd_model_name"]):
+                        ui_model_dropdown.addItems(config["sdd_model_name"])
+                        self.__sdd_model_container[modelname] = config["sdd_model"][idx]
                 
                 # frame window mapping
                 self.__frame_window_map = {}
@@ -161,9 +167,11 @@ class AppWindow(QMainWindow):
                     self.__image_recorder[id] = image_writer(prefix=str(f"camera_{id}"), save_path=(config["app_path"] / config["image_out_path"]))
                     self.__image_recorder[id].start()
 
-                # for SDD Model
-                print(self.__sdd_model_container.values())
-                self.__sdd_model_path = ""
+                # for inference with SDD Model
+                self.__accel_device = 'cpu:0'
+                if torch.cuda.is_available():
+                    self.__accel_device = 'cuda:0'
+                print(f"Selected inference Acceleration : {self.__accel_device}")
                 
                 
                 # apply monitoring
@@ -303,17 +311,16 @@ class AppWindow(QMainWindow):
     
     # click event callback function
     def on_click_inference(self):
+        
+        if self.__sdd_model != None:
+            self.__do_inference = True
 
-        # getting selected model
-        ui_model_dropdown = self.findChild(QComboBox, name="cmbbox_inference_model")
-        selected = ui_model_dropdown.currentText()
-        model_filename = self.__sdd_model_container[selected]
-        print(f"selected model : {selected}({model_filename})")
+        
 
         # single process with selected model in thread
         # code here
 
-        _label_result = self.findChild(QLabel, "label_inference_result")
+        #_label_result = self.findChild(QLabel, "label_inference_result")
         
     '''
     inference model load
@@ -321,8 +328,12 @@ class AppWindow(QMainWindow):
     def on_click_model_load(self):
         ui_model_dropdown = self.findChild(QComboBox, name="cmbbox_inference_model")
         selected = ui_model_dropdown.currentText()
-        model_filename = self.__sdd_model_container[selected]
-        print(f"selected model : {selected}({model_filename})")
+        print(f"selected : {selected}")
+        #print(f"selected model file : {self.__sdd_model_container[selected]}")
+        abs_path = self.__model_dir / self.__sdd_model_container[selected]
+        print(f"load model path : {type(abs_path.as_posix())}")
+
+        self.__sdd_model = SegInference(model_path=abs_path.as_posix() ,device=self.__accel_device)
         
     
     # re-discover all gige network camera
@@ -379,6 +390,10 @@ class AppWindow(QMainWindow):
         # converting color format
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         rgb_image = cv2.resize(rgb_image, dsize=(480, 300), interpolation=cv2.INTER_AREA)
+
+        ## SDD inference
+        if self.__do_inference and self.__sdd_model!=None:
+            self.__sdd_model.infer_image(rgb_image)
 
         cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 1, cv2.LINE_AA)
         cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 290), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 1, cv2.LINE_AA)
