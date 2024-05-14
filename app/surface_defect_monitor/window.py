@@ -331,7 +331,7 @@ class AppWindow(QMainWindow):
         print(f"selected : {selected}")
         #print(f"selected model file : {self.__sdd_model_container[selected]}")
         abs_path = self.__model_dir / self.__sdd_model_container[selected]
-        print(f"load model path : {type(abs_path.as_posix())}")
+        print(f"load model path : {abs_path.as_posix()}")
 
         self.__sdd_model = SegInference(model_path=abs_path.as_posix() ,device=self.__accel_device)
         
@@ -390,16 +390,30 @@ class AppWindow(QMainWindow):
         # converting color format
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         rgb_image = cv2.resize(rgb_image, dsize=(480, 300), interpolation=cv2.INTER_AREA)
+        
 
         ## SDD inference
         if self.__do_inference and self.__sdd_model!=None:
-            self.__sdd_model.infer_image(rgb_image)
+            pred_mask = self.__sdd_model.infer_image(rgb_image)
+            pred_mask = pred_mask * 255
+            pred_mask = pred_mask.astype(np.uint8)
+            pred_mask_squeezed = np.squeeze(pred_mask).reshape(640,640,1) # check dimension
+            pred_mask_color = cv2.cvtColor(pred_mask_squeezed, cv2.COLOR_GRAY2BGR)
+            mask_rgb_image = cv2.resize(pred_mask_color, dsize=(480, 300), interpolation=cv2.INTER_AREA)
+
+            # mask
+            lower_white = np.array([10, 10, 10], dtype=np.uint8)
+            upper_white = np.array([255, 255, 255], dtype=np.uint8)
+            mask = cv2.inRange(mask_rgb_image, lower_white, upper_white)
+            rgb_image[mask!=0] = [255, 0, 0]
+
 
         cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 1, cv2.LINE_AA)
         cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 290), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 1, cv2.LINE_AA)
         
         #converting ndarray to qt image
         _h, _w, _ch = rgb_image.shape
+        # print("Output image shape : {_h},{_w},{_ch}")
         _bpl = _ch*_w # bytes per line
         #qt_image = QImage(rgb_cam_image.data, _w, _h, _bpl, QImage.Format.Format_RGB888) # CAM image
         qt_image = QImage(rgb_image.data, _w, _h, _bpl, QImage.Format.Format_RGB888)  # original image

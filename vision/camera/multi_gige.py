@@ -88,7 +88,7 @@ class Controller(QThread):
 
     # grab image
     def grab(self, evt):
-        _camera_array_container.StartGrabbing(pylon.GrabStrategy_LatestImageOnly, pylon.GrabLoop_ProvidedByInstantCamera)
+        _camera_array_container.StartGrabbing(pylon.GrabStrategy_LatestImageOnly, pylon.GrabLoop_ProvidedByUser)
         #_camera_array_container.StartGrabbing(pylon.GrabStrategy_OneByOne, pylon.GrabLoop_ProvidedByUser)
         #_camera_array_container.StartGrabbing(pylon.GrabStrategy_UpcomingImage, pylon.GrabLoop_ProvidedByUser)
         #_camera_array_container.StartGrabbing(pylon.GrabStrategy_LatestImages, pylon.GrabLoop_ProvidedByUser)
@@ -100,7 +100,7 @@ class Controller(QThread):
                 break
 
             t_start = datetime.now()
-            grab_image = _camera_array_container.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
+            grab_image = _camera_array_container.RetrieveResult(60000, pylon.TimeoutHandling_ThrowException)
             camera_id = grab_image.GetCameraContext()
 
             if grab_image.GrabSucceeded():
@@ -161,9 +161,20 @@ def gige_camera_discovery() -> list:
         # create and attach all device
         for idx, cam in enumerate(_camera_array_container):
             cam.Attach(_tlf.CreateDevice(_devices[idx]))
+
+            # cam.Open()
+            # cam.AcquisitionFrameRateEnable.SetValue('Off')
+            # cam.TriggerMode.SetValue("On")
+            # cam.TriggerDelay.SetValue(0)
+            # cam.TriggerSelector.SetValue('FrameStart')
+            # cam.TriggerSource.SetValue('Line2')
+            # cam.TriggerActivation.SetValue('RisingEdge')
+            # cam.Close()
+
             _model_name = cam.GetDeviceInfo().GetModelName()
             uid = cam.GetDeviceInfo().GetUserDefinedName()
             _ip_addr = _devices[idx].GetIpAddress()
+            
             # _devices[idx].GevHeartbeatTimeout.SetValue(5000) # set timeout
             print(f"found GigE Camera Device (User ID:{uid}) {_model_name}({_ip_addr})")
             
