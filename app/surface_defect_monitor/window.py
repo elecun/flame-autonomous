@@ -146,7 +146,7 @@ class AppWindow(QMainWindow):
                 cache_slider = self.findChild(QSlider, "slide_image_cache")
                 cache_slider_pos = self.findChild(QLabel, "label_image_cache_pos")
                 cache_slider_num = self.findChild(QLabel, "label_image_cache_num")
-                slider.setValue(0)
+                cache_slider.setValue(0)
                 cache_slider_pos.setText("0")
                 cache_slider_num.setText("0")
                 
