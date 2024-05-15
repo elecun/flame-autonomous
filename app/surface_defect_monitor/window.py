@@ -142,10 +142,13 @@ class AppWindow(QMainWindow):
                 self.btn_light_connect.clicked.connect(self.on_click_light_connect)
                 self.btn_light_disconnect.clicked.connect(self.on_click_light_disconnect)
                 
-                # image cache slider
+                # image cache slider setting with default value
                 cache_slider = self.findChild(QSlider, "slide_image_cache")
                 cache_slider_pos = self.findChild(QLabel, "label_image_cache_pos")
-                cache_slider_pos = self.findChild(QLabel, "label_image_cache_num")
+                cache_slider_num = self.findChild(QLabel, "label_image_cache_num")
+                slider.setValue(0)
+                cache_slider_pos.setText("0")
+                cache_slider_num.setText("0")
                 
                 # external trigger control
                 # edit_trigger_freq
@@ -440,8 +443,8 @@ class AppWindow(QMainWindow):
             rgb_image = cv2.addWeighted(rgb_image, 0.5, mask_rgb_image, 0.5, 0)
 
 
-        cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 1, cv2.LINE_AA)
-        cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 290), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 1, cv2.LINE_AA)
+        cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
+        cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 290), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
         
         #converting ndarray to qt image
         _h, _w, _ch = rgb_image.shape

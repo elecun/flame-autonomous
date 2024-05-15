@@ -88,7 +88,7 @@ class Controller(QThread):
 
     # grab image
     def grab(self, evt):
-        _camera_array_container.StartGrabbing(pylon.GrabStrategy_LatestImageOnly, pylon.GrabLoop_ProvidedByUser)
+        _camera_array_container.StartGrabbing(pylon.GrabStrategy_OneByOne, pylon.GrabLoop_ProvidedByUser)
         #_camera_array_container.StartGrabbing(pylon.GrabStrategy_OneByOne, pylon.GrabLoop_ProvidedByUser)
         #_camera_array_container.StartGrabbing(pylon.GrabStrategy_UpcomingImage, pylon.GrabLoop_ProvidedByUser)
         #_camera_array_container.StartGrabbing(pylon.GrabStrategy_LatestImages, pylon.GrabLoop_ProvidedByUser)
@@ -100,7 +100,7 @@ class Controller(QThread):
                 break
 
             t_start = datetime.now()
-            grab_image = _camera_array_container.RetrieveResult(60000, pylon.TimeoutHandling_ThrowException)
+            grab_image = _camera_array_container.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
             camera_id = grab_image.GetCameraContext()
 
             if grab_image.GrabSucceeded():
@@ -151,7 +151,8 @@ def gige_camera_discovery() -> list:
         
         # get all attached devices
         _devices = _tlf.EnumerateDevices()
-        
+
+
         if len(_devices)==0:
             raise Exception(f"No camera present")
         
@@ -176,13 +177,13 @@ def gige_camera_discovery() -> list:
             uid = cam.GetDeviceInfo().GetUserDefinedName()
             _ip_addr = _devices[idx].GetIpAddress()
             
-            # _devices[idx].GevHeartbeatTimeout.SetValue(5000) # set timeout
+            # _devices[idx].GetHeartbeatTimeout.SetValue(5000) # set timeout
             print(f"found GigE Camera Device (User ID:{uid}) {_model_name}({_ip_addr})")
             
             _caminfo_array.append((uid, _model_name, _ip_addr))
         
     except Exception as e:
-        print(f"{e}")
+        print(f"Exception : {e}")
         
     return _caminfo_array
     
