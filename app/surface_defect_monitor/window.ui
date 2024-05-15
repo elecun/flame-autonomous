@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1920</width>
-    <height>861</height>
+    <height>896</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,7 +43,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>650</y>
+      <y>680</y>
       <width>481</width>
       <height>131</height>
      </rect>
@@ -186,7 +186,7 @@
     <property name="geometry">
      <rect>
       <x>190</x>
-      <y>510</y>
+      <y>540</y>
       <width>301</width>
       <height>131</height>
      </rect>
@@ -225,9 +225,9 @@
     <property name="geometry">
      <rect>
       <x>1190</x>
-      <y>490</y>
+      <y>520</y>
       <width>401</width>
-      <height>311</height>
+      <height>291</height>
      </rect>
     </property>
     <property name="title">
@@ -237,7 +237,7 @@
      <property name="geometry">
       <rect>
        <x>290</x>
-       <y>270</y>
+       <y>250</y>
        <width>100</width>
        <height>32</height>
       </rect>
@@ -255,7 +255,7 @@
        <x>5</x>
        <y>23</y>
        <width>391</width>
-       <height>241</height>
+       <height>221</height>
       </rect>
      </property>
      <property name="editTriggers">
@@ -270,19 +270,19 @@
     <property name="geometry">
      <rect>
       <x>500</x>
-      <y>510</y>
+      <y>640</y>
       <width>261</width>
-      <height>271</height>
+      <height>171</height>
      </rect>
     </property>
     <property name="title">
-     <string>Inference Process</string>
+     <string>SDD Model</string>
     </property>
     <widget class="QPushButton" name="btn_inference">
      <property name="geometry">
       <rect>
-       <x>150</x>
-       <y>220</y>
+       <x>140</x>
+       <y>120</y>
        <width>100</width>
        <height>41</height>
       </rect>
@@ -331,13 +331,13 @@
      <property name="geometry">
       <rect>
        <x>20</x>
-       <y>220</y>
+       <y>120</y>
        <width>100</width>
        <height>41</height>
       </rect>
      </property>
      <property name="text">
-      <string>Load</string>
+      <string>Model Load</string>
      </property>
     </widget>
    </widget>
@@ -383,7 +383,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>510</y>
+      <y>540</y>
       <width>171</width>
       <height>131</height>
      </rect>
@@ -458,9 +458,9 @@
     <property name="geometry">
      <rect>
       <x>1600</x>
-      <y>490</y>
+      <y>520</y>
       <width>311</width>
-      <height>311</height>
+      <height>291</height>
      </rect>
     </property>
     <property name="title">
@@ -554,7 +554,7 @@
      <property name="geometry">
       <rect>
        <x>80</x>
-       <y>120</y>
+       <y>110</y>
        <width>181</width>
        <height>25</height>
       </rect>
@@ -586,7 +586,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>120</y>
+       <y>110</y>
        <width>58</width>
        <height>16</height>
       </rect>
@@ -599,7 +599,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>150</y>
+       <y>140</y>
        <width>58</width>
        <height>16</height>
       </rect>
@@ -612,7 +612,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>180</y>
+       <y>170</y>
        <width>58</width>
        <height>16</height>
       </rect>
@@ -625,7 +625,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>210</y>
+       <y>200</y>
        <width>58</width>
        <height>16</height>
       </rect>
@@ -641,7 +641,7 @@
      <property name="geometry">
       <rect>
        <x>80</x>
-       <y>150</y>
+       <y>140</y>
        <width>181</width>
        <height>25</height>
       </rect>
@@ -663,7 +663,7 @@
      <property name="geometry">
       <rect>
        <x>80</x>
-       <y>180</y>
+       <y>170</y>
        <width>181</width>
        <height>25</height>
       </rect>
@@ -685,7 +685,7 @@
      <property name="geometry">
       <rect>
        <x>80</x>
-       <y>210</y>
+       <y>200</y>
        <width>181</width>
        <height>25</height>
       </rect>
@@ -744,6 +744,102 @@
       <rect>
        <x>270</x>
        <y>210</y>
+       <width>31</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>-</string>
+     </property>
+    </widget>
+    <widget class="QSlider" name="slide_ch5">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>80</x>
+       <y>230</y>
+       <width>181</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="maximum">
+      <number>255</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="tickInterval">
+      <number>10</number>
+     </property>
+    </widget>
+    <widget class="QSlider" name="slide_ch6">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>80</x>
+       <y>260</y>
+       <width>181</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="maximum">
+      <number>255</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="tickInterval">
+      <number>10</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_light_ch5">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>230</y>
+       <width>58</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Ch </string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_light_ch6">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>260</y>
+       <width>58</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Ch </string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_value_slide_ch5">
+     <property name="geometry">
+      <rect>
+       <x>270</x>
+       <y>240</y>
+       <width>31</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>-</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_value_slide_ch6">
+     <property name="geometry">
+      <rect>
+       <x>270</x>
+       <y>270</y>
        <width>31</width>
        <height>20</height>
       </rect>
@@ -890,7 +986,7 @@
     <property name="geometry">
      <rect>
       <x>770</x>
-      <y>510</y>
+      <y>540</y>
       <width>221</width>
       <height>271</height>
      </rect>
@@ -914,7 +1010,7 @@
     <widget class="QLabel" name="label_11">
      <property name="geometry">
       <rect>
-       <x>20</x>
+       <x>10</x>
        <y>30</y>
        <width>111</width>
        <height>16</height>
@@ -923,11 +1019,14 @@
      <property name="text">
       <string>Frequency(Hz) :</string>
      </property>
+     <property name="alignment">
+      <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+     </property>
     </widget>
     <widget class="QLabel" name="label_12">
      <property name="geometry">
       <rect>
-       <x>20</x>
+       <x>10</x>
        <y>70</y>
        <width>111</width>
        <height>16</height>
@@ -935,6 +1034,9 @@
      </property>
      <property name="text">
       <string>Trigger Count :</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
      </property>
     </widget>
     <widget class="QLineEdit" name="edit_trigger_freq">
@@ -963,6 +1065,102 @@
       <string>100</string>
      </property>
     </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_8">
+    <property name="geometry">
+     <rect>
+      <x>500</x>
+      <y>540</y>
+      <width>261</width>
+      <height>80</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Process Mode</string>
+    </property>
+    <widget class="QRadioButton" name="radiobtn_process_mode_sequential">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>40</y>
+       <width>99</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Sequential</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radiobtn_process_mode_batch">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>40</y>
+       <width>99</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Batch</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QSlider" name="slide_image_cache">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>490</y>
+      <width>1711</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <number>255</number>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+    <property name="tickInterval">
+     <number>10</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_13">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>492</y>
+      <width>91</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Image Cache</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_num_image_cache">
+    <property name="geometry">
+     <rect>
+      <x>1860</x>
+      <y>490</y>
+      <width>51</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
