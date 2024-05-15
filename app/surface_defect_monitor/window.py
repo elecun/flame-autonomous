@@ -32,8 +32,6 @@ from util.logger.console import ConsoleLogger
 from vision.SDD.ResNet import ResNet9 as SDDModel
 
 # for TransUNET Segmentaiton
-#from vision.SDD.TransUNET_Seg.inference import SegInference
-#from vision.SDD.TransUNET_Seg.config import cfg
 import torch
 from vision.SDD.TransUNET_Seg.inference import SegInference
 
@@ -144,6 +142,18 @@ class AppWindow(QMainWindow):
                 self.btn_light_connect.clicked.connect(self.on_click_light_connect)
                 self.btn_light_disconnect.clicked.connect(self.on_click_light_disconnect)
                 
+                # image cache slider
+                cache_slider = self.findChild(QSlider, "slide_image_cache")
+                cache_slider_pos = self.findChild(QLabel, "label_image_cache_pos")
+                cache_slider_pos = self.findChild(QLabel, "label_image_cache_num")
+                
+                # external trigger control
+                # edit_trigger_freq
+                # edit_trigger_count
+                # btn_start_capture_trigger
+                
+                
+                
                 # update slider gui component for light control
                 for idx, ch in enumerate(config["light_channel"]):
                     slider = self.findChild(QSlider, f"slide_ch{idx+1}")
@@ -222,6 +232,21 @@ class AppWindow(QMainWindow):
         slider = self.sender()
         label_light_value = self.findChild(QLabel, f"label_value_{slider.objectName()}")
         label_light_value.setText(f"{slider.value()}")
+        
+    '''
+    slider release event
+    '''
+    def on_released_slider_value2(self):
+        slider = self.sender()
+        self.__console.info(f"{slider.value()}")
+        
+        if self.__light_controller != None:
+            dmx_data =  [0]*3+[int(slider.value())]*1+[0]*2
+            dmx_length = len(dmx_data) + 1
+            data_length_lsb = dmx_length & 0xFF  # 데이터 길이 LSB
+            data_length_msb = (dmx_length >> 8) & 0xFF  # 데이터 길이 
+            message = [0x7E, 6, data_length_lsb, data_length_msb, 0] + dmx_data + [0xE7]
+            self.__light_controller.write(bytearray(message))
     
     '''
     slider relased event
