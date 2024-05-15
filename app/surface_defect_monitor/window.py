@@ -240,13 +240,13 @@ class AppWindow(QMainWindow):
             ch9=Num
             ch13=Num
             ch17=Num
-            ch20=Num
+            ch21=Num
             dmx_data =  [0]*1+[int(ch1)]*1+ \
                         [0]*3+[int(ch5)]*1+ \
                         [0]*3+[int(ch9)]*1+ \
                         [0]*3+[int(ch13)]*1+ \
                         [0]*3+[int(ch17)]*1+ \
-                        [0]*3+[int(ch20)]*1+[0]*2
+                        [0]*3+[int(ch21)]*1+[0]*2
             dmx_length = len(dmx_data) + 1  # DMX 데이터 길이 + 1 (스타트 코드 포함)
             data_length_lsb = dmx_length & 0xFF  # 데이터 길이 LSB
             data_length_msb = (dmx_length >> 8) & 0xFF  # 데이터 길이 
