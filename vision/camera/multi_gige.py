@@ -33,6 +33,7 @@ _camera_array_container:pylon.InstantCameraArray = None
 class Controller(QThread):
     
     frame_update_signal = pyqtSignal(int, np.ndarray, float) # to gui and process
+    frame_update_signal_multi = pyqtSignal(int, dict, float)
     frame_write_signal = pyqtSignal(int, np.ndarray, float) # to write image/video
     
     def __init__(self):
@@ -88,11 +89,13 @@ class Controller(QThread):
 
     # grab image
     def grab(self, evt):
-        _camera_array_container.StartGrabbing(pylon.GrabStrategy_OneByOne, pylon.GrabLoop_ProvidedByUser)
+        _camera_array_container.StartGrabbing(pylon.GrabStrategy_LatestImages, pylon.GrabLoop_ProvidedByUser)
         #_camera_array_container.StartGrabbing(pylon.GrabStrategy_OneByOne, pylon.GrabLoop_ProvidedByUser)
         #_camera_array_container.StartGrabbing(pylon.GrabStrategy_UpcomingImage, pylon.GrabLoop_ProvidedByUser)
         #_camera_array_container.StartGrabbing(pylon.GrabStrategy_LatestImages, pylon.GrabLoop_ProvidedByUser)
         multi_camera_fps = {}
+
+        __raw_images = {}
 
         while True:
 
@@ -108,6 +111,8 @@ class Controller(QThread):
                 image = self.__converter.Convert(grab_image)
                 raw_image = image.GetArray()
 
+                __raw_images[camera_id] = raw_image
+
                 if camera_id in multi_camera_fps.keys():
                     framerate = float(1./(t_start - multi_camera_fps[camera_id]).total_seconds())
                 else:
@@ -116,8 +121,11 @@ class Controller(QThread):
                 
                 
                 # send image
-                self.frame_update_signal.emit(camera_id, raw_image, framerate)
-                #self.frame_write_signal.emit(camera_id, raw_image, framerate)
+                #self.frame_update_signal.emit(camera_id, raw_image, framerate)
+                if len(__raw_images)==10:
+                    self.frame_update_signal_multi.emit(camera_id, __raw_images.copy(), framerate)
+                    #self.__console.info(f"emit")
+                    __raw_images.clear()
 
                 time.sleep(0.001)
                 if evt.is_set():

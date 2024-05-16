@@ -113,7 +113,7 @@ class SegInference:
             elapsed_time = (end_time - start_time) * 1000  # 밀리초로 변환
 
             formatted_time = "{:.2f}".format(elapsed_time)
-            print(f"Inference took {formatted_time} milliseconds")
+            #print(f"Inference took {formatted_time} milliseconds")
             
             pred_mask = pred_mask.detach().cpu().numpy().transpose((0, 2, 3, 1))
         

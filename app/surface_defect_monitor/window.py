@@ -327,6 +327,7 @@ class AppWindow(QMainWindow):
             if self.__camera_controller is None:
                 self.__camera_controller = GigEMultiCameraController()
                 self.__camera_controller.frame_update_signal.connect(self.show_updated_frame) # connect to frame grab signal
+                self.__camera_controller.frame_update_signal_multi.connect(self.show_updated_frame_multi) # connect to multi frame
                 self.__camera_controller.start_grab()
         except Exception as e:
             self.__console.critical(f"Camera controller cannot be open. It may already be opened.")
@@ -413,11 +414,65 @@ class AppWindow(QMainWindow):
         #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         self.__recorder_container[id].write_frame(image, fps)
+    
+    # show updated multi image frame on GIO window
+    def show_updated_frame_multi(self, id:int, images:dict, fps:float):
+        t_start = datetime.now()
+
+        perf_count = 0
+        for idx, key in enumerate(images):
+            perf_count = perf_count+1
+            rgb_image = cv2.cvtColor(images[key], cv2.COLOR_BGR2RGB)
+            rgb_image = cv2.resize(rgb_image, dsize=(480, 300), interpolation=cv2.INTER_AREA)
+
+            ## SDD inference
+            if self.__do_inference and self.__sdd_model!=None:
+                pred_mask = self.__sdd_model.infer_image(rgb_image)
+                pred_mask = pred_mask * 255
+                pred_mask = pred_mask.astype(np.uint8)
+                #pred_mask_squeezed = np.squeeze(pred_mask).reshape(640,640,1) # check dimension
+                pred_mask_squeezed = pred_mask.reshape(640,640,1) # check dimension
+                pred_mask_color = cv2.cvtColor(pred_mask_squeezed, cv2.COLOR_GRAY2RGB)
+                mask_rgb_image = cv2.resize(pred_mask_color, dsize=(480, 300), interpolation=cv2.INTER_AREA)
+
+                # mask
+                lower_white = np.array([10, 10, 10], dtype=np.uint8)
+                upper_white = np.array([250, 250, 250], dtype=np.uint8)
+                mask = cv2.inRange(mask_rgb_image, lower_white, upper_white)
+                mask_rgb_image[mask!=0] = [255, 0, 0]
+
+                rgb_image = cv2.addWeighted(rgb_image, 0.5, mask_rgb_image, 0.5, 0)
         
+            cv2.putText(rgb_image, f"Camera #{id}(fps:{int(fps)})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
+            cv2.putText(rgb_image, t_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 290), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
+
+            #converting ndarray to qt image
+            _h, _w, _ch = rgb_image.shape
+            # print("Output image shape : {_h},{_w},{_ch}")
+            _bpl = _ch*_w # bytes per line
+            #qt_image = QImage(rgb_cam_image.data, _w, _h, _bpl, QImage.Format.Format_RGB888) # CAM image
+            qt_image = QImage(rgb_image.data, _w, _h, _bpl, QImage.Format.Format_RGB888)  # original image
+
+            # converting qt image to QPixmap
+            pixmap = QPixmap.fromImage(qt_image)
+
+            # draw on window
+            try:
+                window = self.findChild(QLabel, self.__frame_window_map[key])
+                window.setPixmap(pixmap.scaled(window.size(), Qt.AspectRatioMode.KeepAspectRatio))
+                window.repaint()
+            except Exception as e:
+                self.__console.critical(f"camera {e}")
+    
+        self.__console.info("processed")
+        #self.__do_inference = False
+        
+
     # show updated image frame on GUI window
     def show_updated_frame(self, id:int, image:np.ndarray, fps:float):
 
         t_start = datetime.now()
+        start_time = time.perf_counter()
 
         # converting color format
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -455,6 +510,14 @@ class AppWindow(QMainWindow):
 
         # converting qt image to QPixmap
         pixmap = QPixmap.fromImage(qt_image)
+
+        # check performance
+        end_time = time.perf_counter()
+        elapsed_time = (end_time - start_time) * 1000
+        formatted_time = "{:.2f}".format(elapsed_time)
+        print(f"Process took {formatted_time} milliseconds")
+
+        self.__do_inference = False
 
         # draw on window
         try:
